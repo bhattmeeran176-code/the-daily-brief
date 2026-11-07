@@ -1,0 +1,178 @@
+import { useState } from "react";
+
+export default function Admin() {
+  const [articles, setArticles] = useState([]);
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("World");
+  const [content, setContent] = useState("");
+  const [message, setMessage] = useState("");
+
+  function addArticle(e) {
+    e.preventDefault();
+
+    if (!title.trim() || !content.trim()) {
+      setMessage("Please enter title and article content.");
+      return;
+    }
+
+    setArticles([
+      ...articles,
+      {
+        id: Date.now(),
+        title,
+        category,
+        content,
+        status: "Draft",
+      },
+    ]);
+
+    setTitle("");
+    setContent("");
+    setMessage("Article added as draft!");
+  }
+
+  function publishArticle(id) {
+    setArticles(
+      articles.map((article) =>
+        article.id === id
+          ? { ...article, status: "Published" }
+          : article
+      )
+    );
+  }
+
+  function deleteArticle(id) {
+    setArticles(articles.filter((article) => article.id !== id));
+  }
+
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background: "#f4f6fa",
+      padding: "24px",
+      fontFamily: "Arial, sans-serif",
+      color: "#172033",
+    },
+    card: {
+      background: "#fff",
+      padding: "20px",
+      borderRadius: "12px",
+      marginBottom: "20px",
+      boxShadow: "0 2px 10px #0000000a",
+    },
+    input: {
+      width: "100%",
+      padding: "12px",
+      margin: "8px 0 16px",
+      border: "1px solid #d9deea",
+      borderRadius: "7px",
+      boxSizing: "border-box",
+    },
+    button: {
+      background: "#172033",
+      color: "#fff",
+      padding: "11px 18px",
+      border: "none",
+      borderRadius: "7px",
+      cursor: "pointer",
+    },
+  };
+
+  return (
+    <main style={styles.page}>
+      <header style={styles.card}>
+        <h1>The Daily Brief</h1>
+        <p>Admin Dashboard</p>
+        <h2>Welcome, Admin!</h2>
+        <p>Total Articles: {articles.length}</p>
+        <p>
+          Published:{" "}
+          {articles.filter((a) => a.status === "Published").length}
+        </p>
+      </header>
+
+      <section style={styles.card}>
+        <h2>Create New Article</h2>
+
+        <form onSubmit={addArticle}>
+          <label>Article Title</label>
+          <input
+            style={styles.input}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter article title"
+          />
+
+          <label>Category</label>
+          <select
+            style={styles.input}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option>World</option>
+            <option>India</option>
+            <option>Jammu & Kashmir</option>
+            <option>Technology</option>
+            <option>Business</option>
+            <option>Science</option>
+          </select>
+
+          <label>Article Content</label>
+          <textarea
+            style={{ ...styles.input, minHeight: "150px" }}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Write your article here..."
+          />
+
+          <button style={styles.button} type="submit">
+            Save Article
+          </button>
+        </form>
+
+        {message && <p>{message}</p>}
+      </section>
+
+      <section style={styles.card}>
+        <h2>Manage Articles</h2>
+
+        {articles.length === 0 ? (
+          <p>No articles added yet.</p>
+        ) : (
+          articles.map((article) => (
+            <div
+              key={article.id}
+              style={{
+                borderBottom: "1px solid #eee",
+                padding: "15px 0",
+              }}
+            >
+              <h3>{article.title}</h3>
+              <p>{article.category} · {article.status}</p>
+
+              {article.status === "Draft" && (
+                <button
+                  style={styles.button}
+                  onClick={() => publishArticle(article.id)}
+                >
+                  Publish
+                </button>
+              )}
+
+              <button
+                style={{
+                  ...styles.button,
+                  background: "#c0392b",
+                  marginLeft: "8px",
+                }}
+                onClick={() => deleteArticle(article.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))
+        )}
+      </section>
+    </main>
+  );
+}
