@@ -42,8 +42,7 @@ function App(){
   <footer><a className="brand footer-brand" href="#" onClick={e=>{e.preventDefault();setSelected(null)}}><span className="brand-mark">DB</span><span>THE DAILY <b>BRIEF</b><small>GLOBAL NEWS, CLEARLY TOLD</small></span></a><p>Independent journalism. Clear perspectives.</p><span>© 2026 The Daily Brief</span></footer>
  </div>
 }
+
 createRoot(document.getElementById('root')).render(
-  window.location.pathname.startsWith('/admin')
-    ? <AdminLogin />
-    : <App />
+  <AdminLogin />
 );
