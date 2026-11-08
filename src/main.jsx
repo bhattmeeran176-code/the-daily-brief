@@ -18,9 +18,8 @@ function App(){
  const filtered=useMemo(()=>stories.filter(s=>(active==='All'||s.category===active)&&(`${s.title} ${s.excerpt} ${s.category}`).toLowerCase().includes(query.toLowerCase())),[active,query]);
  const featured=stories[0];
  const openStory=(s)=>{setSelected(s);window.scrollTo({top:0,behavior:'smooth'});};
-if (window.location.pathname.startsWith('/admin')) {
-  return <AdminLogin />;
-} return <div className="site">
+
+          return <div className="site">
   <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>Saturday, November 7, 2026</span></div>
   <header className="header">
    <button className="icon-btn mobile-menu" onClick={()=>setMenu(!menu)} aria-label="Open menu">{menu?<X/>:<Menu/>}</button>
