@@ -44,5 +44,7 @@ function App(){
 }
 
 createRoot(document.getElementById('root')).render(
-  <AdminLogin />
+  window.location.pathname.startsWith('/admin')
+    ? <AdminLogin />
+    : <App />
 );
