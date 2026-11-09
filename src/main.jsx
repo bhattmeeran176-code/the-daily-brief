@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail} from 'lucide-react';
 import './styles.css';
 import AdminLogin from './AdminLogin.jsx';
+import PasswordReset from './PasswordReset.jsx';
 const stories = [
  {id:1, category:'World', tag:'GEOPOLITICS', title:'A changing world order: the questions shaping global diplomacy', excerpt:'From shifting alliances to new economic priorities, leaders are navigating a more complex international landscape.', author:'Editorial Desk', date:'November 7, 2026', read:'6 min read', image:'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1400&q=85', featured:true},
  {id:2, category:'Technology', tag:'INNOVATION', title:'The next chapter of artificial intelligence is being written now', excerpt:'Researchers and businesses are working through the opportunities, risks and rules surrounding rapidly advancing AI.', author:'Maya Chen', date:'November 6, 2026', read:'5 min read', image:'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1000&q=85'},
@@ -44,7 +45,9 @@ function App(){
 }
 
 createRoot(document.getElementById('root')).render(
-  window.location.pathname.startsWith('/admin')
-    ? <AdminLogin />
-    : <App />
+  window.location.pathname === '/reset-password'
+  ? <PasswordReset />
+  : window.location.pathname.startsWith('/admin')
+  ? <AdminLogin />
+  : <App />
 );
