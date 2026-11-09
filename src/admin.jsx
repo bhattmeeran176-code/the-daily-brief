@@ -28,6 +28,8 @@ useEffect(() => {
   e.preventDefault();
 const { data: { user }, error: authError } =
   await supabase.auth.getUser();
+   const { data: sessionData } = await supabase.auth.getSession();
+console.log("SESSION:", sessionData.session);
 setMessage(
   authError
     ? authError.message
