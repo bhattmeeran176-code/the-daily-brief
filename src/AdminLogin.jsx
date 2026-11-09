@@ -23,7 +23,7 @@ export default function AdminLogin() {
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage('Login successful! Admin authentication is working.');
+      window.location.href = '/dashboard';
     }
   }
 async function handleForgotPassword() {
