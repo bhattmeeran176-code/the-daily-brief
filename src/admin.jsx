@@ -43,6 +43,8 @@ if (authError || !user) {
   );
   return;
 }
+   setMessage("Logged in as: " + user.email);
+return;
   if (!title.trim() || !content.trim()) {
     setMessage("Please enter title and article content.");
     return;
