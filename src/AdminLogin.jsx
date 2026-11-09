@@ -26,7 +26,27 @@ export default function AdminLogin() {
       setMessage('Login successful! Admin authentication is working.');
     }
   }
+async function handleForgotPassword() {
+  if (!email) {
+    setMessage('Please enter your admin email first.');
+    return;
+  }
 
+  setLoading(true);
+  setMessage('');
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://the-daily-brief.onrender.com/reset-password'
+  });
+
+  setLoading(false);
+
+  if (error) {
+    setMessage(error.message);
+  } else {
+    setMessage('Password reset link sent! Check your email.');
+  }
+}
   return (
     <div style={{
       minHeight: '100vh',
@@ -76,7 +96,22 @@ export default function AdminLogin() {
         }}>
           {loading ? 'Please wait...' : 'Login'}
         </button>
-
+<button
+  type="button"
+  onClick={handleForgotPassword}
+  disabled={loading}
+  style={{
+    width: '100%',
+    padding: '12px',
+    marginTop: '10px',
+    background: 'transparent',
+    color: 'white',
+    border: '1px solid white',
+    borderRadius: '6px'
+  }}
+>
+  Forgot Password?
+</button>
         <p>{message}</p>
       </form>
     </div>
