@@ -26,7 +26,14 @@ useEffect(() => {
 }, []);
  async function addArticle(e) {
   e.preventDefault();
+const { data: { user }, error: authError } =
+  await supabase.auth.getUser();
 
+if (authError || !user) {
+  setMessage("Please log in as admin first.");
+  window.location.href = "/admin";
+  return;
+}
   if (!title.trim() || !content.trim()) {
     setMessage("Please enter title and article content.");
     return;
