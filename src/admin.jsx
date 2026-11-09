@@ -28,10 +28,19 @@ useEffect(() => {
   e.preventDefault();
 const { data: { user }, error: authError } =
   await supabase.auth.getUser();
-
+setMessage(
+  authError
+    ? authError.message
+    : user
+    ? `Authenticated: ${user.email} | ID: ${user.id}`
+    : "No authenticated user found"
+);
 if (authError || !user) {
-  setMessage("Please log in as admin first.");
-  window.location.href = "/admin";
+  setMessage(
+    authError
+      ? authError.message
+      : "No authenticated user found. Please log in again."
+  );
   return;
 }
   if (!title.trim() || !content.trim()) {
