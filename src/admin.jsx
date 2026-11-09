@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "./supabase";
 
 export default function Admin() {
   const [articles, setArticles] = useState([]);
@@ -6,30 +7,52 @@ export default function Admin() {
   const [category, setCategory] = useState("World");
   const [content, setContent] = useState("");
   const [message, setMessage] = useState("");
+useEffect(() => {
+  async function loadArticles() {
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  function addArticle(e) {
-    e.preventDefault();
-
-    if (!title.trim() || !content.trim()) {
-      setMessage("Please enter title and article content.");
+    if (error) {
+      setMessage("Error: " + error.message);
       return;
     }
 
-    setArticles([
-      ...articles,
-      {
-        id: Date.now(),
-        title,
-        category,
-        content,
-        status: "Draft",
-      },
-    ]);
-
-    setTitle("");
-    setContent("");
-    setMessage("Article added as draft!");
+    setArticles(data || []);
   }
+
+  loadArticles();
+}, []);
+ async function addArticle(e) {
+  e.preventDefault();
+
+  if (!title.trim() || !content.trim()) {
+    setMessage("Please enter title and article content.");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("articles")
+    .insert([{
+      title: title,
+      category: category,
+      content: content,
+      status: "Draft"
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    setMessage("Error: " + error.message);
+    return;
+  }
+
+  setArticles([data, ...articles]);
+  setTitle("");
+  setContent("");
+  setMessage("Article saved successfully!");
+ }
 
   function publishArticle(id) {
     setArticles(
