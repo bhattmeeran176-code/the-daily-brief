@@ -52,6 +52,31 @@ useEffect(() => {
 
   loadPublishedArticles();
 }, []);
+ if (selected) {
+  return (
+    <div style={{maxWidth: "850px", margin: "auto", padding: "25px"}}>
+      <button onClick={() => setSelected(null)}>
+        ← Back to Home
+      </button>
+
+      { (selected.image || selected.image_url) && (
+        <img
+          src={selected.image || selected.image_url}
+          alt={selected.title}
+          style={{width: "100%", marginTop: "25px"}}
+        />
+      )}
+
+      <p>{selected.category || selected.tag}</p>
+
+      <h1>{selected.title}</h1>
+
+      <div style={{whiteSpace: "pre-wrap", lineHeight: "1.8"}}>
+        {selected.content || selected.excerpt || selected.description}
+      </div>
+    </div>
+  );
+ }
           return <div className="site">
   <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>Saturday, November 7, 2026</span></div>
   <header className="header">
