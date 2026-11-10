@@ -52,31 +52,73 @@ useEffect(() => {
 
   loadPublishedArticles();
 }, []);
- if (selected) {
+ 
+if (selected) {
   return (
-    <div style={{maxWidth: "850px", margin: "auto", padding: "25px"}}>
-      <button onClick={() => setSelected(null)}>
+    <article style={{
+      maxWidth: "850px",
+      margin: "40px auto",
+      padding: "24px",
+      color: "#252525",
+      background: "#fff",
+      fontFamily: "Georgia, serif"
+    }}>
+      <button
+        onClick={() => setSelected(null)}
+        style={{
+          padding: "10px 16px",
+          border: "1px solid #ddd",
+          background: "#f7f7f4",
+          cursor: "pointer",
+          marginBottom: "28px"
+        }}
+      >
         ← Back to Home
       </button>
 
-      { (selected.image || selected.image_url) && (
+      <p style={{
+        color: "#9b654d",
+        textTransform: "uppercase",
+        letterSpacing: "2px",
+        fontSize: "12px"
+      }}>
+        {selected.category || selected.tag}
+      </p>
+
+      <h1 style={{
+        fontSize: "clamp(30px, 5vw, 48px)",
+        lineHeight: "1.15",
+        margin: "16px 0 24px"
+      }}>
+        {selected.title}
+      </h1>
+
+      {(selected.image || selected.image_url) && (
         <img
           src={selected.image || selected.image_url}
           alt={selected.title}
-          style={{width: "100%", marginTop: "25px"}}
+          style={{
+            width: "100%",
+            maxHeight: "480px",
+            objectFit: "cover",
+            marginBottom: "28px"
+          }}
         />
       )}
 
-      <p>{selected.category || selected.tag}</p>
-
-      <h1>{selected.title}</h1>
-
-      <div style={{whiteSpace: "pre-wrap", lineHeight: "1.8"}}>
+      <div style={{
+        fontFamily: "Arial, sans-serif",
+        fontSize: "17px",
+        lineHeight: "1.9",
+        whiteSpace: "pre-wrap",
+        overflowWrap: "anywhere"
+      }}>
         {selected.content || selected.excerpt || selected.description}
       </div>
-    </div>
+    </article>
   );
- }
+}
+
           return <div className="site">
   <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>Saturday, November 7, 2026</span></div>
   <header className="header">
