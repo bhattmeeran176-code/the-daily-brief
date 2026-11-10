@@ -24,6 +24,7 @@ function App(){
     ...article,
     tag: article.category,
     excerpt: article.content,
+   image: article.image_url,
     featured: false
   })),
   ...stories
