@@ -6,6 +6,7 @@ export default function Admin() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("World");
   const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [message, setMessage] = useState("");
 useEffect(() => {
   async function loadArticles() {
@@ -56,6 +57,7 @@ if (authError || !user) {
     .insert([{
       title: title,
       category: category,
+      image_url: imageUrl,
       content: content,
       status: "Draft"
     }])
@@ -70,6 +72,7 @@ if (authError || !user) {
   setArticles([data, ...articles]);
   setTitle("");
   setContent("");
+   setImageUrl("");
   setMessage("Article saved successfully!");
  }
 
@@ -170,7 +173,14 @@ async function publishArticle(id) {
             <option>Business</option>
             <option>Science</option>
           </select>
-
+<label>Article Image URL</label>
+<input
+  style={styles.input}
+  type="url"
+  value={imageUrl}
+  onChange={(e) => setImageUrl(e.target.value)}
+  placeholder="Paste image URL here"
+/>
           <label>Article Content</label>
           <textarea
             style={{ ...styles.input, minHeight: "150px" }}
