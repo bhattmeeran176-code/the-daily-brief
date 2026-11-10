@@ -7,6 +7,8 @@ export default function Admin() {
   const [category, setCategory] = useState("World");
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 useEffect(() => {
   async function loadArticles() {
@@ -51,13 +53,37 @@ if (authError || !user) {
     setMessage("Please enter title and article content.");
     return;
   }
+let finalImageUrl = imageUrl;
 
+if (imageFile) {
+  setUploading(true);
+
+  const fileExt = imageFile.name.split('.').pop();
+  const fileName = `${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('article-images')
+    .upload(fileName, imageFile);
+
+  setUploading(false);
+
+  if (uploadError) {
+    setMessage("Image upload error: " + uploadError.message);
+    return;
+  }
+
+  const { data: publicData } = supabase.storage
+    .from('article-images')
+    .getPublicUrl(fileName);
+
+  finalImageUrl = publicData.publicUrl;
+}
   const { data, error } = await supabase
     .from("articles")
     .insert([{
       title: title,
       category: category,
-      image_url: imageUrl,
+      image_url: finalImageUrl,
       content: content,
       status: "Draft"
     }])
@@ -173,6 +199,13 @@ async function publishArticle(id) {
             <option>Business</option>
             <option>Science</option>
           </select>
+          <label>Upload Article Image</label>
+<input
+  style={styles.input}
+  type="file"
+  accept="image/*"
+  onChange={(e) => setImageFile(e.target.files[0] || null)}
+/>
 <label>Article Image URL</label>
 <input
   style={styles.input}
@@ -190,7 +223,7 @@ async function publishArticle(id) {
           />
 
           <button style={styles.button} type="submit">
-            Save Article
+            {uploading ? "Uploading..." : "Save Article"}
           </button>
         </form>
 
