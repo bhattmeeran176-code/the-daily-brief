@@ -73,15 +73,27 @@ if (authError || !user) {
   setMessage("Article saved successfully!");
  }
 
-  function publishArticle(id) {
-    setArticles(
-      articles.map((article) =>
-        article.id === id
-          ? { ...article, status: "Published" }
-          : article
-      )
-    );
+async function publishArticle(id) {
+  const { data, error } = await supabase
+    .from("articles")
+    .update({ status: "Published" })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    setMessage("Publish error: " + error.message);
+    return;
   }
+
+  setArticles(
+    articles.map((article) =>
+      article.id === id ? data : article
+    )
+  );
+
+  setMessage("Article published successfully!");
+}
 
   function deleteArticle(id) {
     setArticles(articles.filter((article) => article.id !== id));
