@@ -157,7 +157,8 @@ if (existingSchema) existingSchema.remove();
       datePublished: selected.created_at || undefined,
       author: {
         "@type": "Organization",
-        name: "The Daily Brief"
+        name: "The Daily Brief",
+url: window.location.origin
       },
       publisher: {
         "@type": "Organization",
