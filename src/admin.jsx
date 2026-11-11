@@ -10,6 +10,7 @@ export default function Admin() {
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingId, setEditingId] = useState(null);
 useEffect(() => {
   async function loadArticles() {
     const { data, error } = await supabase
@@ -78,28 +79,57 @@ if (imageFile) {
 
   finalImageUrl = publicData.publicUrl;
 }
-  const { data, error } = await supabase
+  let data;
+let error;
+
+if (editingId) {
+  const result = await supabase
+    .from("articles")
+    .update({
+      title,
+      category,
+      image_url: finalImageUrl,
+      content
+    })
+    .eq("id", editingId)
+    .select()
+    .single();
+
+  data = result.data;
+  error = result.error;
+} else {
+  const result = await supabase
     .from("articles")
     .insert([{
-      title: title,
-      category: category,
+      title,
+      category,
       image_url: finalImageUrl,
-      content: content,
+      content,
       status: "Draft"
     }])
     .select()
     .single();
+
+  data = result.data;
+  error = result.error;
+}
 
   if (error) {
     setMessage("Error: " + error.message);
     return;
   }
 
-  setArticles([data, ...articles]);
-  setTitle("");
-  setContent("");
-   setImageUrl("");
-  setMessage("Article saved successfully!");
+  setArticles((prev) =>
+  editingId
+    ? prev.map((article) => article.id === data.id ? data : article)
+    : [data, ...prev]
+);
+setTitle("");
+setContent("");
+setImageUrl("");
+setImageFile(null);
+setEditingId(null);
+setMessage(editingId ? "Article updated successfully!" : "Article saved successfully!");
  }
 
 async function publishArticle(id) {
@@ -123,7 +153,16 @@ async function publishArticle(id) {
 
   setMessage("Article published successfully!");
 }
-
+function editArticle(article) {
+  setTitle(article.title || "");
+  setCategory(article.category || "World");
+  setContent(article.content || "");
+  setImageUrl(article.image_url || "");
+  setImageFile(null);
+  setEditingId(article.id);
+  setMessage("Editing article...");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
   async function deleteArticle(id) {
   const { error } = await supabase
     .from("articles")
