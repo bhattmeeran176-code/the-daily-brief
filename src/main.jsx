@@ -106,6 +106,8 @@ if (!canonical) {
 }
 
 canonical.href = window.location.origin + "/";
+ const existingSchema = document.querySelector("#article-schema");
+if (existingSchema) existingSchema.remove();
   return;
 }
   document.title = `${selected.title} | The Daily Brief`;
@@ -136,6 +138,34 @@ canonical.href = window.location.origin + "/";
   }
 
   canonical.href = window.location.href;
+ 
+    let schema = document.querySelector("#article-schema");
+
+    if (!schema) {
+      schema = document.createElement("script");
+      schema.id = "article-schema";
+      schema.type = "application/ld+json";
+      document.head.appendChild(schema);
+    }
+
+    schema.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      headline: selected.title,
+      description: description,
+      image: selected.image || selected.image_url || undefined,
+      datePublished: selected.created_at || undefined,
+      author: {
+        "@type": "Organization",
+        name: "The Daily Brief"
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "The Daily Brief"
+      },
+      mainEntityOfPage: window.location.href
+    });
+
 }, [selected]);
  
 if (selected) {
