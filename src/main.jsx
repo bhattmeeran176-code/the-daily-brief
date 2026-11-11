@@ -38,7 +38,14 @@ const filtered = useMemo(
   [active, query, publishedArticles]
 );
  const featured=stories[0];
- const openStory=(s)=>{setSelected(s);window.scrollTo({top:0,behavior:'smooth'});};
+ const openStory = (s) => {
+  setSelected(s);
+  const slug = s.title.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  window.history.pushState({}, "", `/?article=${slug}`);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
 useEffect(() => {
   async function loadPublishedArticles() {
     const { data, error } = await supabase
@@ -52,7 +59,31 @@ useEffect(() => {
 
   loadPublishedArticles();
 }, []);
- 
+ useEffect(() => {
+  const openFromUrl = () => {
+    const slug = new URLSearchParams(window.location.search).get("article");
+
+    if (!slug) {
+      setSelected(null);
+      return;
+    }
+
+    const allArticles = [...publishedArticles, ...stories];
+
+    const article = allArticles.find((s) =>
+      s.title.toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") === slug
+    );
+
+    if (article) setSelected(article);
+  };
+
+  openFromUrl();
+  window.addEventListener("popstate", openFromUrl);
+
+  return () => window.removeEventListener("popstate", openFromUrl);
+}, [publishedArticles]);
 if (selected) {
   return (
     <article style={{
@@ -64,7 +95,10 @@ if (selected) {
       fontFamily: "Georgia, serif"
     }}>
       <button
-        onClick={() => setSelected(null)}
+        onClick={() => {
+  setSelected(null);
+  window.history.pushState({}, "", "/");
+}}
         style={{
           padding: "10px 16px",
           border: "1px solid #ddd",
