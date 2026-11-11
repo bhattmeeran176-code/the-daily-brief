@@ -237,7 +237,52 @@ if (selected) {
     </article>
   );
 }
+if (window.location.pathname === "/about") {
+  return (
+    <main style={{
+      maxWidth: "850px",
+      margin: "50px auto",
+      padding: "30px",
+      color: "#252525",
+      background: "#fff",
+      fontFamily: "Georgia, serif",
+      lineHeight: "1.8"
+    }}>
+      <a href="/" style={{color: "#9b654d"}}>← Back to Home</a>
 
+      <p style={{color: "#9b654d", letterSpacing: "2px"}}>
+        THE DAILY BRIEF
+      </p>
+
+      <h1>About Us</h1>
+
+      <h2>Who We Are</h2>
+      <p>
+        The Daily Brief is an independent digital publication
+        dedicated to explaining important stories from around
+        the world with clarity, context and perspective.
+      </p>
+
+      <h2>Our Mission</h2>
+      <p>
+        Our mission is to make complex issues easier to understand
+        through informative, accessible and meaningful journalism.
+      </p>
+
+      <h2>Our Editorial Values</h2>
+      <p>
+        Accuracy, fairness, transparency, independence and
+        curiosity guide the way we present information.
+      </p>
+
+      <h2>Our Commitment</h2>
+      <p>
+        We aim to give readers more than headlines by exploring
+        the context, people and ideas behind important events.
+      </p>
+    </main>
+  );
+}
           return <div className="site">
   <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>Saturday, November 7, 2026</span></div>
   <header className="header">
