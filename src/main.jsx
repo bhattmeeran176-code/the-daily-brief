@@ -84,6 +84,60 @@ useEffect(() => {
 
   return () => window.removeEventListener("popstate", openFromUrl);
 }, [publishedArticles]);
+ 
+useEffect(() => {
+if (!selected) {
+  document.title = "The Daily Brief | Global News, Clearly Told";
+
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) {
+    meta.setAttribute(
+      "content",
+      "The Daily Brief — global news, clear perspectives, and stories that matter."
+    );
+  }
+
+  let canonical = document.querySelector('link[rel="canonical"]');
+
+if (!canonical) {
+  canonical = document.createElement("link");
+  canonical.rel = "canonical";
+  document.head.appendChild(canonical);
+}
+
+canonical.href = window.location.origin + "/";
+  return;
+}
+  document.title = `${selected.title} | The Daily Brief`;
+
+  const description = (
+    selected.content ||
+    selected.excerpt ||
+    selected.description ||
+    "Read the latest stories on The Daily Brief."
+  ).replace(/\s+/g, " ").slice(0, 160);
+
+  let meta = document.querySelector('meta[name="description"]');
+
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "description";
+    document.head.appendChild(meta);
+  }
+
+  meta.setAttribute("content", description);
+
+  let canonical = document.querySelector('link[rel="canonical"]');
+
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.rel = "canonical";
+    document.head.appendChild(canonical);
+  }
+
+  canonical.href = window.location.href;
+}, [selected]);
+ 
 if (selected) {
   return (
     <article style={{
