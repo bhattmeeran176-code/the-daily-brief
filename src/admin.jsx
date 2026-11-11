@@ -273,7 +273,7 @@ function editArticle(article) {
           />
 
           <button style={styles.button} type="submit">
-            {uploading ? "Uploading..." : "Save Article"}
+            {uploading ? "Uploading..." : editingId ? "Update Article" : "Save Article"}
           </button>
         </form>
 
@@ -305,7 +305,12 @@ function editArticle(article) {
                   Publish
                 </button>
               )}
-
+<button
+  style={styles.button}
+  onClick={() => editArticle(article)}
+>
+  Edit
+</button>
               <button
                 style={{
                   ...styles.button,
