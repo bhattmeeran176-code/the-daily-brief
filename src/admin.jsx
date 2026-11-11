@@ -124,8 +124,19 @@ async function publishArticle(id) {
   setMessage("Article published successfully!");
 }
 
-  function deleteArticle(id) {
-    setArticles(articles.filter((article) => article.id !== id));
+  async function deleteArticle(id) {
+  const { error } = await supabase
+    .from("articles")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    setMessage("Delete error: " + error.message);
+    return;
+  }
+
+  setArticles((prev) => prev.filter((article) => article.id !== id));
+  setMessage("Article deleted successfully!");
   }
 
   const styles = {
