@@ -16,6 +16,77 @@ const stories = [
 ];
 const categories=['All','World','India','Business','Technology','Science','Culture'];
 
+function ContactPage() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+  const [status, setStatus] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("Sending...");
+
+    const { error } = await supabase
+      .from("contact_messages")
+      .insert([form]);
+
+    if (error) {
+      setStatus("Message could not be sent. Please try again.");
+    } else {
+      setStatus("Message sent successfully!");
+      setForm({
+        name: "",
+        email: "",
+        subject: "",
+        message: ""
+      });
+    }
+  };
+
+  return (
+    <main style={{ maxWidth: "700px", margin: "50px auto", padding: "30px", background: "#fff", color: "#252525" }}>
+      <a href="/">← Back to Home</a>
+      <h1>Contact Us</h1>
+      <p>Have a question or feedback? Send us a message.</p>
+
+      <form onSubmit={handleSubmit}>
+        {["name", "email", "subject"].map((field) => (
+          <div key={field} style={{ marginBottom: "18px" }}>
+            <label>{field.toUpperCase()}</label>
+            <input
+              required
+              type={field === "email" ? "email" : "text"}
+              value={form[field]}
+              onChange={(e) =>
+                setForm({ ...form, [field]: e.target.value })
+              }
+              style={{ display: "block", width: "100%", padding: "12px", boxSizing: "border-box" }}
+            />
+          </div>
+        ))}
+
+        <label>MESSAGE</label>
+        <textarea
+          required
+          rows="6"
+          value={form.message}
+          onChange={(e) =>
+            setForm({ ...form, message: e.target.value })
+          }
+          style={{ display: "block", width: "100%", padding: "12px", boxSizing: "border-box" }}
+        />
+
+        <button type="submit">Send Message</button>
+      </form>
+
+      <p>{status}</p>
+    </main>
+  );
+}
+
 function App(){
  const [publishedArticles, setPublishedArticles] = useState([]);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [subscribed,setSubscribed]=useState(false);
@@ -308,11 +379,15 @@ if (window.location.pathname === "/about") {
 }
 
 createRoot(document.getElementById('root')).render(
-  window.location.pathname === '/reset-password'
+  
+window.location.pathname === '/reset-password'
   ? <PasswordReset />
+  : window.location.pathname === '/contact'
+  ? <ContactPage />
   : window.location.pathname === '/dashboard'
-? <Admin />
-: window.location.pathname.startsWith('/admin')
+  ? <Admin />
+  : window.location.pathname.startsWith('/admin')
   ? <AdminLogin />
   : <App />
+ 
 );
