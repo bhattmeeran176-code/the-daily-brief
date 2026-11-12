@@ -87,6 +87,72 @@ function ContactPage() {
   );
 }
 
+function PrivacyPage() {
+  return (
+    <main style={{
+      maxWidth: "750px",
+      margin: "50px auto",
+      padding: "30px",
+      background: "#fff",
+      color: "#252525",
+      fontFamily: "Arial, sans-serif",
+      lineHeight: "1.8"
+    }}>
+      <a href="/">← Back to Home</a>
+      <h1>Privacy Policy</h1>
+      <p>Last updated: November 12, 2026</p>
+
+      <p>
+        The Daily Brief respects your privacy. This policy explains
+        how we collect and use information submitted through our website.
+      </p>
+
+      <h2>1. Information We Collect</h2>
+      <p>
+        Our Contact Us form may collect your name, email address,
+        subject and message.
+      </p>
+
+      <h2>2. How We Use Information</h2>
+      <p>
+        We use submitted information to respond to questions,
+        feedback and enquiries.
+      </p>
+
+      <h2>3. Data Storage</h2>
+      <p>
+        Contact messages are stored using Supabase.
+      </p>
+
+      <h2>4. Information Sharing</h2>
+      <p>
+        We do not sell personal information. Service providers may
+        process information to operate our website.
+      </p>
+
+      <h2>5. Data Retention</h2>
+      <p>
+        We retain messages only as long as reasonably necessary
+        for communication and record keeping.
+      </p>
+
+      <h2>6. Your Privacy</h2>
+      <p>
+        For privacy-related questions, contact us through our
+        Contact Us page.
+      </p>
+
+      <h2>7. Policy Updates</h2>
+      <p>
+        We may update this policy when our practices change.
+      </p>
+
+      <h2>8. Contact Us</h2>
+      <p><a href="/contact">Contact The Daily Brief</a></p>
+    </main>
+  );
+}
+
 function App(){
  const [publishedArticles, setPublishedArticles] = useState([]);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [subscribed,setSubscribed]=useState(false);
@@ -384,6 +450,8 @@ window.location.pathname === '/reset-password'
   ? <PasswordReset />
   : window.location.pathname === '/contact'
   ? <ContactPage />
+  : window.location.pathname === '/privacy-policy'
+  ? <PrivacyPage />
   : window.location.pathname === '/dashboard'
   ? <Admin />
   : window.location.pathname.startsWith('/admin')
