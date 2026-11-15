@@ -33,6 +33,10 @@ export default function Admin() {
   const [newPassword, setNewPassword] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
+  const [brandingFiles, setBrandingFiles] = useState({ headerLogo: null, footerLogo: null, favicon: null });
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [brandingMessage, setBrandingMessage] = useState("");
+  const [brandingPreview, setBrandingPreview] = useState({ headerLogo: "", footerLogo: "", favicon: "" });
 
   const loadArticles = useCallback(async () => {
     const { data, error } = await supabase
@@ -371,6 +375,60 @@ export default function Admin() {
     }
   }
 
+  function handleBrandingFileChange(key, event) {
+    const file = event.target.files?.[0] || null;
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"].includes(file.type)) {
+      event.target.value = "";
+      setBrandingMessage("Choose a PNG, JPG, WEBP, SVG or ICO image.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      event.target.value = "";
+      setBrandingMessage("Branding image must be 5 MB or less.");
+      return;
+    }
+    setBrandingFiles((previous) => ({ ...previous, [key]: file }));
+    setBrandingPreview((previous) => ({ ...previous, [key]: URL.createObjectURL(file) }));
+    setBrandingMessage("");
+  }
+
+  async function saveBranding(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setBrandingMessage("Admin authorization is required.");
+      return;
+    }
+    const paths = { headerLogo: "header-logo", footerLogo: "footer-logo", favicon: "favicon" };
+    const selected = Object.entries(brandingFiles).filter(([, file]) => file);
+    if (!selected.length) {
+      setBrandingMessage("Choose at least one branding image before saving.");
+      return;
+    }
+    setBrandingSaving(true);
+    setBrandingMessage("");
+    try {
+      for (const [key, file] of selected) {
+        const { error } = await supabase.storage.from("article-images").upload(
+          `site-branding/${paths[key]}`,
+          file,
+          { contentType: file.type, cacheControl: "0", upsert: true }
+        );
+        if (error) throw error;
+      }
+      setBrandingFiles({ headerLogo: null, footerLogo: null, favicon: null });
+      setBrandingMessage("Website branding saved. Refresh the public website to see the changes.");
+      ["header-logo-file", "footer-logo-file", "favicon-file"].forEach((id) => {
+        const input = document.getElementById(id);
+        if (input) input.value = "";
+      });
+    } catch (error) {
+      setBrandingMessage(error?.message || "Website branding could not be saved.");
+    } finally {
+      setBrandingSaving(false);
+    }
+  }
+
   async function logout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -423,6 +481,24 @@ export default function Admin() {
           <button style={styles.button} type="submit" disabled={profileSaving}>{profileSaving ? "Saving profile…" : "Save Profile"}</button>
         </form>
         {profileMessage && <p role="status" aria-live="polite">{profileMessage}</p>}
+      </section>
+
+      <section style={styles.card}>
+        <h2>Website Branding</h2>
+        <p>Change the logos shown on the public website and its browser tab. Select files from your phone or computer.</p>
+        <form onSubmit={saveBranding}>
+          <label htmlFor="header-logo-file">Header Logo (PNG, JPG, WEBP or SVG; max 5 MB)</label>
+          <input id="header-logo-file" style={styles.input} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(event) => handleBrandingFileChange("headerLogo", event)} />
+          {brandingPreview.headerLogo && <img src={brandingPreview.headerLogo} alt="Header logo preview" style={{ maxWidth: "240px", maxHeight: "90px", objectFit: "contain", display: "block", marginBottom: 16 }} />}
+          <label htmlFor="footer-logo-file">Footer Logo (optional)</label>
+          <input id="footer-logo-file" style={styles.input} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(event) => handleBrandingFileChange("footerLogo", event)} />
+          {brandingPreview.footerLogo && <img src={brandingPreview.footerLogo} alt="Footer logo preview" style={{ maxWidth: "220px", maxHeight: "80px", objectFit: "contain", display: "block", marginBottom: 16 }} />}
+          <label htmlFor="favicon-file">Browser Favicon (PNG, JPG, WEBP, SVG or ICO)</label>
+          <input id="favicon-file" style={styles.input} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/vnd.microsoft.icon" onChange={(event) => handleBrandingFileChange("favicon", event)} />
+          {brandingPreview.favicon && <img src={brandingPreview.favicon} alt="Favicon preview" style={{ width: 48, height: 48, objectFit: "contain", display: "block", marginBottom: 16 }} />}
+          <button style={styles.button} type="submit" disabled={brandingSaving}>{brandingSaving ? "Saving branding…" : "Save Website Branding"}</button>
+        </form>
+        {brandingMessage && <p role="status" aria-live="polite">{brandingMessage}</p>}
       </section>
 
       <section style={styles.card}>
