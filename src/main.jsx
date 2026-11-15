@@ -248,6 +248,35 @@ const filtered = useMemo(
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 useEffect(() => {
+  let active = true;
+  async function loadSiteBranding() {
+    const { data, error } = await supabase.storage.from("article-images").list("site-branding", { limit: 100 });
+    if (error || !active) return;
+    const files = data || [];
+    const findAsset = (name) => {
+      const file = files.find((item) => item.name === name);
+      return file ? supabase.storage.from("article-images").getPublicUrl(`site-branding/${name}`).data.publicUrl + `?v=${encodeURIComponent(file.updated_at || "")}` : "";
+    };
+    setSiteBranding({
+      headerLogo: findAsset("header-logo"),
+      footerLogo: findAsset("footer-logo"),
+      favicon: findAsset("favicon"),
+    });
+  }
+  loadSiteBranding();
+  return () => { active = false; };
+}, []);
+useEffect(() => {
+  if (!siteBranding.favicon) return;
+  let icon = document.querySelector('link[rel="icon"]');
+  if (!icon) {
+    icon = document.createElement("link");
+    icon.rel = "icon";
+    document.head.appendChild(icon);
+  }
+  icon.href = siteBranding.favicon;
+}, [siteBranding.favicon]);
+useEffect(() => {
   async function loadPublishedArticles() {
     const { data, error } = await supabase
       .from('articles')
