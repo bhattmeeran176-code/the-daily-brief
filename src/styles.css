@@ -90,3 +90,16 @@ img { max-width: 100%; }
   }
   .article-deck { font-size: 16px; }
 }
+
+
+/* Latest updates ticker */
+.latest-updates{display:flex;align-items:stretch;gap:0;margin:18px 0 0;border:1px solid #dedfd9;background:#eeefe9;min-width:0}
+.latest-updates-label{display:flex;align-items:center;gap:9px;flex:0 0 auto;padding:0 17px;background:#243c35;color:#fff;font:700 9px 'DM Sans',sans-serif;letter-spacing:.14em;white-space:nowrap}
+.latest-updates-dot{width:7px;height:7px;border-radius:50%;background:#d98a64;box-shadow:0 0 0 3px rgba(217,138,100,.18)}
+.latest-updates-track{display:flex;align-items:center;gap:0;min-width:0;overflow-x:auto;scrollbar-width:thin}
+.latest-update-item{display:flex;align-items:center;gap:9px;min-width:250px;max-width:360px;padding:14px 17px;border:0;border-right:1px solid #d7d9d1;background:transparent;text-align:left;color:#29352e}
+.latest-update-item span{flex:0 0 auto;color:#a45a3b;font:700 8px 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.latest-update-item strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 11px 'DM Sans',sans-serif}
+.latest-update-item svg{flex:0 0 auto;color:#a45a3b}
+.latest-update-item:hover{background:#e5e8df}
+@media(max-width:600px){.latest-updates{display:block;margin-top:12px}.latest-updates-label{padding:11px 13px}.latest-updates-track{width:100%}.latest-update-item{min-width:235px;padding:13px 14px}}
