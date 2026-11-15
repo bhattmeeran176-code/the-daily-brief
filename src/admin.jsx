@@ -5,6 +5,10 @@ const ADMIN_EMAIL = "thedailybrieffff@gmail.com";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
+function normalizeArticleStatus(status) {
+  return String(status || "").trim().replace(/^['"]|['"]$/g, "").toLowerCase();
+}
+
 export default function Admin() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -267,7 +271,7 @@ export default function Admin() {
         </div>
         <h2>Welcome, Admin</h2>
         <p>Total Articles: {articles.length}</p>
-        <p>Published: {articles.filter((article) => article.status === "Published").length}</p>
+        <p>Published: {articles.filter((article) => normalizeArticleStatus(article.status) === "published").length}</p>
       </header>
 
       <section style={styles.card}>
@@ -296,8 +300,8 @@ export default function Admin() {
         {articles.length === 0 ? <p>No articles added yet.</p> : articles.map((article) => (
           <div key={article.id} style={{ borderBottom: "1px solid #eee", padding: "15px 0" }}>
             <h3>{article.title}</h3>
-            <p>{article.category} · {article.status}</p>
-            {article.status === "Draft"
+            <p>{article.category} · {normalizeArticleStatus(article.status) === "published" ? "Published" : "Draft"}</p>
+            {normalizeArticleStatus(article.status) === "draft"
               ? <button style={styles.button} onClick={() => publishArticle(article.id)}>Publish</button>
               : <button style={{ ...styles.button, background: "#687386" }} onClick={() => unpublishArticle(article.id)}>Move to Draft</button>}
             <button style={styles.button} onClick={() => editArticle(article)}>Edit</button>
