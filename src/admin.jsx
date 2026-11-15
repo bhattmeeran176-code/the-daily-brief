@@ -195,6 +195,23 @@ export default function Admin() {
     setMessage("Article published successfully.");
   }
 
+  async function unpublishArticle(id) {
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
+    if (!window.confirm("Move this article back to Draft? It will no longer appear on the public website.")) return;
+    const { data, error } = await supabase
+      .from("articles")
+      .update({ status: "Draft" })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) {
+      setMessage("Could not move article to draft: " + error.message);
+      return;
+    }
+    setArticles((previous) => previous.map((article) => article.id === id ? data : article));
+    setMessage("Article moved to Draft. It is no longer public.");
+  }
+
   function editArticle(article) {
     setTitle(article.title || "");
     setCategory(article.category || "World");
@@ -280,7 +297,9 @@ export default function Admin() {
           <div key={article.id} style={{ borderBottom: "1px solid #eee", padding: "15px 0" }}>
             <h3>{article.title}</h3>
             <p>{article.category} · {article.status}</p>
-            {article.status === "Draft" && <button style={styles.button} onClick={() => publishArticle(article.id)}>Publish</button>}
+            {article.status === "Draft"
+              ? <button style={styles.button} onClick={() => publishArticle(article.id)}>Publish</button>
+              : <button style={{ ...styles.button, background: "#687386" }} onClick={() => unpublishArticle(article.id)}>Move to Draft</button>}
             <button style={styles.button} onClick={() => editArticle(article)}>Edit</button>
             <button style={{ ...styles.button, background: "#c0392b" }} onClick={() => deleteArticle(article.id)}>Delete</button>
           </div>
