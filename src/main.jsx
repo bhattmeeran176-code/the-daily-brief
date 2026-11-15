@@ -570,6 +570,19 @@ if (window.location.pathname === "/about") {
    <div className="header-actions"><label className="searchbox"><Search size={16}/><input placeholder="Search stories" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null)}}/></label><button className="subscribe-btn" onClick={()=>document.getElementById('newsletter').scrollIntoView({behavior:'smooth'})}>Subscribe <ArrowUpRight size={15}/></button></div>
   </header>
 
+  {allStories.some((story) => story.is_breaking) && (
+   <section className="breaking-news-bar" aria-label="Breaking news">
+    <div className="breaking-news-label"><span className="breaking-pulse" />BREAKING NEWS</div>
+    <div className="breaking-news-track">
+     {allStories.filter((story) => story.is_breaking).slice(0, 3).map((story) => (
+      <button type="button" className="breaking-news-item" key={story.id} onClick={() => openStory(story)}>
+       <strong>{story.title}</strong><ArrowUpRight size={14} />
+      </button>
+     ))}
+    </div>
+   </section>
+  )}
+
   {latestUpdates.length > 0 && (
    <section className="latest-updates" aria-label="Latest news updates">
     <div className="latest-updates-label"><span className="latest-updates-dot" />LATEST UPDATES</div>
