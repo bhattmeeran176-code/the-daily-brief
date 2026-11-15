@@ -28,6 +28,7 @@ export default function Admin() {
   const [newsletterResult, setNewsletterResult] = useState("");
   const [profileName, setProfileName] = useState("");
   const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
+  const [profileAvatarFile, setProfileAvatarFile] = useState(null);
   const [profileEmail, setProfileEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
@@ -293,6 +294,19 @@ export default function Admin() {
   }
 
 
+  function handleProfilePhotoChange(event) {
+    const file = event.target.files?.[0] || null;
+    const validationError = validateImage(file);
+    if (validationError) {
+      event.target.value = "";
+      setProfileAvatarFile(null);
+      setProfileMessage(validationError);
+      return;
+    }
+    setProfileAvatarFile(file);
+    setProfileMessage("");
+  }
+
   async function saveProfile(event) {
     event.preventDefault();
     if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
@@ -302,13 +316,44 @@ export default function Admin() {
     setProfileSaving(true);
     setProfileMessage("");
     try {
+      let finalAvatarUrl = profileAvatarUrl;
+      let uploadedAvatarPath = null;
+      if (profileAvatarFile) {
+        const extensionByType = {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp",
+          "image/gif": "gif",
+        };
+        const fileName = `profiles/${user.id}/avatar-${Date.now()}-${crypto.randomUUID()}.${extensionByType[profileAvatarFile.type]}`;
+        const { error: uploadError } = await supabase.storage
+          .from("article-images")
+          .upload(fileName, profileAvatarFile, {
+            contentType: profileAvatarFile.type,
+            cacheControl: "3600",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+        uploadedAvatarPath = fileName;
+        const { data: publicData } = supabase.storage
+          .from("article-images")
+          .getPublicUrl(fileName);
+        finalAvatarUrl = publicData.publicUrl;
+      }
       const metadata = {
         ...user.user_metadata,
         full_name: profileName.trim(),
-        avatar_url: profileAvatarUrl.trim(),
+        avatar_url: finalAvatarUrl,
       };
       const { data, error } = await supabase.auth.updateUser({ data: metadata });
-      if (error) throw error;
+      if (error) {
+        if (uploadedAvatarPath) await supabase.storage.from("article-images").remove([uploadedAvatarPath]);
+        throw error;
+      }
+      setProfileAvatarUrl(finalAvatarUrl);
+      setProfileAvatarFile(null);
+      const photoInput = document.getElementById("profile-avatar-file");
+      if (photoInput) photoInput.value = "";
       let notices = ["Profile details saved."];
       if (newPassword) {
         if (newPassword.length < 8) throw new Error("Password must be at least 8 characters.");
@@ -367,9 +412,9 @@ export default function Admin() {
         <form onSubmit={saveProfile}>
           <label htmlFor="profile-name">Profile Name</label>
           <input id="profile-name" style={styles.input} value={profileName} onChange={(event) => setProfileName(event.target.value)} maxLength={100} placeholder="Your display name" />
-          <label htmlFor="profile-avatar">Profile Picture URL</label>
-          <input id="profile-avatar" style={styles.input} type="url" value={profileAvatarUrl} onChange={(event) => setProfileAvatarUrl(event.target.value)} placeholder="https://example.com/profile.jpg" />
-          {profileAvatarUrl && <img src={profileAvatarUrl} alt="Profile preview" referrerPolicy="no-referrer" style={{ width: 76, height: 76, objectFit: "cover", borderRadius: "50%", display: "block", marginBottom: 16 }} onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+          <label htmlFor="profile-avatar-file">Upload Profile Photo (JPG, PNG, WEBP or GIF; max 5 MB)</label>
+          <input id="profile-avatar-file" style={styles.input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleProfilePhotoChange} />
+          {(profileAvatarFile || profileAvatarUrl) && <img src={profileAvatarFile ? URL.createObjectURL(profileAvatarFile) : profileAvatarUrl} alt="Profile preview" referrerPolicy="no-referrer" style={{ width: 88, height: 88, objectFit: "cover", borderRadius: "50%", display: "block", marginBottom: 16 }} />}
           <label htmlFor="profile-email">Admin Email</label>
           <input id="profile-email" style={styles.input} type="email" value={profileEmail || user.email || ""} readOnly />
           <small style={{ display: "block", color: "#687386", marginTop: -10, marginBottom: 16 }}>The admin email is fixed in the site's access allowlist, so change it only after updating the site's admin authorization settings.</small>
