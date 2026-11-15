@@ -186,6 +186,7 @@ function PrivacyPage() {
 
 function App(){
  const [publishedArticles, setPublishedArticles] = useState([]);
+ const [publishedArticlesError, setPublishedArticlesError] = useState('');
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const allStories = [
   ...publishedArticles.map((article, index) => ({
@@ -250,10 +251,16 @@ useEffect(() => {
     const { data, error } = await supabase
       .from('articles')
       .select('*')
-      .eq('status', 'Published')
+      .ilike('status', 'published')
       .order('created_at', { ascending: false });
 
-    if (!error) setPublishedArticles(data || []);
+    if (error) {
+      console.error('Homepage article load failed:', error);
+      setPublishedArticlesError(error.message || 'Unable to load published stories.');
+      return;
+    }
+    setPublishedArticlesError('');
+    setPublishedArticles(data || []);
   }
 
   loadPublishedArticles();
@@ -498,7 +505,7 @@ if (window.location.pathname === "/about") {
   <main>
    <section className="hero-intro"><div className="eyebrow"><span className="dot"></span> THE WORLD, IN CONTEXT</div><h1>Clarity in a world<br/><i>of headlines.</i></h1><p>Independent perspectives and essential stories from around the globe. Understand what matters — and why.</p></section>
    <section className="lead-grid">
-    {featured ? <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt={featured.title}/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article> : <div className="empty">No published stories yet. Please check back soon.</div>}
+    {featured ? <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt={featured.title}/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article> : <div className="empty">{publishedArticlesError ? `Stories could not load: ${publishedArticlesError}` : 'No published stories yet. Please check back soon.'}</div>}
     <aside className="side-brief"><div className="section-label">THE EDITOR'S BRIEFING <span>01 — 03</span></div><h3>Beyond the noise.<br/>Towards understanding.</h3><p>We focus on the context behind the headlines: the people, policies and ideas shaping tomorrow.</p><div className="side-stat"><strong>01</strong><span>Context before commentary</span></div><div className="side-stat"><strong>02</strong><span>Curiosity across borders</span></div><div className="side-stat"><strong>03</strong><span>Clarity over noise</span></div></aside>
    </section>
    <section className="latest" id="latest"><div className="section-heading"><div><div className="eyebrow">STAY INFORMED</div><h2>{active==='All'?'Latest stories':active+' stories'}</h2></div><div className="filters">{categories.map(c=><button className={active===c?'active':''} key={c} onClick={()=>setActive(c)}>{c}</button>)}</div></div>
