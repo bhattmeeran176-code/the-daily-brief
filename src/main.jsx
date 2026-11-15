@@ -209,39 +209,48 @@ const filtered = useMemo(
 
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
+  if (newsletterStatus === 'submitting') return;
+
   const normalizedEmail = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
     setNewsletterStatus('error');
     setNewsletterMessage('Please enter a valid email address.');
     return;
   }
+
   setNewsletterStatus('submitting');
   setNewsletterMessage('');
-  const { error } = await supabase
-    .from('newsletter_subscribers')
-    .insert([{ email: normalizedEmail }]);
-  if (error) {
-    if (error.code === '23505') {
-      setNewsletterStatus('success');
-      setNewsletterMessage('This email is already subscribed.');
-    } else if (error.code === '42P01' || error.code === 'PGRST205') {
-      setNewsletterStatus('error');
-      setNewsletterMessage('Newsletter setup is not finished yet. Please try again later.');
-    } else {
-      setNewsletterStatus('error');
-      setNewsletterMessage('Subscription could not be saved. Please try again later.');
+
+  try {
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .insert([{ email: normalizedEmail }]);
+
+    if (error) {
+      if (error.code === '23505') {
+        setNewsletterStatus('success');
+        setNewsletterMessage('This email is already subscribed.');
+      } else if (error.code === '42P01' || error.code === 'PGRST205') {
+        setNewsletterStatus('error');
+        setNewsletterMessage('Newsletter setup is not finished yet. Please try again later.');
+      } else {
+        setNewsletterStatus('error');
+        setNewsletterMessage('Subscription could not be saved. Please try again later.');
+      }
+      return;
     }
-    return;
+
+    setNewsletterStatus('success');
+    setNewsletterMessage('Thank you! Your email has been subscribed.');
+    setEmail('');
+  } catch {
+    setNewsletterStatus('error');
+    setNewsletterMessage('Connection problem. Please check your internet and try again.');
   }
-  setNewsletterStatus('success');
-  setNewsletterMessage('Thank you! Your email has been subscribed.');
-  setEmail('');
  };
  const openStory = (s) => {
   setSelected(s);
-  const slug = s.title.toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  const slug = slugify(s.slug || s.title);
   window.history.pushState({}, "", `/article/${slug}`);
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
