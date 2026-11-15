@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check} from 'lucide-react';
+import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check, Bookmark, Moon, Sun, Eye} from 'lucide-react';
 import './styles.css';
 import AdminLogin from './AdminLogin.jsx';
 import PasswordReset from './PasswordReset.jsx';
@@ -191,6 +191,8 @@ function App(){
  const [readingProgress, setReadingProgress] = useState(0);
  const [shareCopied, setShareCopied] = useState(false);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
+ const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem('tdb-theme')==='dark';}catch{return false;}});
+ const [savedIds,setSavedIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('tdb-saved-articles')||'[]');}catch{return [];}});
  const allStories = [
   ...publishedArticles.map((article, index) => ({
     ...article,
@@ -211,7 +213,13 @@ const filtered = useMemo(
 );
  const featured=allStories[0] || null;
  const latestUpdates = allStories.slice(0, 4);
+ const mostReadStories = [...allStories].filter(s=>Number(s.views_count)>0).sort((a,b)=>Number(b.views_count||0)-Number(a.views_count||0)).slice(0,4);
+ const savedStories = allStories.filter(s=>savedIds.includes(String(s.id)));
+ const toggleSaved = (story)=>setSavedIds(previous=>{const id=String(story.id);return previous.includes(id)?previous.filter(item=>item!==id):[...previous,id];});
 
+ useEffect(()=>{document.body.classList.toggle('theme-dark',darkMode);try{localStorage.setItem('tdb-theme',darkMode?'dark':'light');}catch{}},[darkMode]);
+ useEffect(()=>{try{localStorage.setItem('tdb-saved-articles',JSON.stringify(savedIds));}catch{}},[savedIds]);
+ useEffect(()=>{if(!selected?.id)return;const viewKey='tdb-viewed-'+selected.id;try{if(sessionStorage.getItem(viewKey))return;sessionStorage.setItem(viewKey,'1');}catch{}let active=true;supabase.rpc('increment_article_view',{article_id:String(selected.id)}).then(({data,error})=>{if(!active||error){if(error)console.error('Article view count update failed:',error.message);return;}const count=Number(data||0);setPublishedArticles(previous=>previous.map(article=>String(article.id)===String(selected.id)?{...article,views_count:count}:article));setSelected(previous=>previous&&String(previous.id)===String(selected.id)?{...previous,views_count:count}:previous);});return()=>{active=false;};},[selected?.id]);
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
   const normalizedEmail = email.trim().toLowerCase();
@@ -433,6 +441,7 @@ url: window.location.origin
  
 if (selected) {
   const articleUrl = window.location.origin + `/article/${slugify(selected.slug || selected.title)}`;
+  const isSaved = savedIds.includes(String(selected.id));
   const articleText = selected.content || selected.excerpt || selected.description || "";
   const wordCount = articleText.trim() ? articleText.trim().split(/\\s+/).length : 0;
   const readingMinutes = Math.max(1, Math.ceil(wordCount / 220));
@@ -469,6 +478,8 @@ if (selected) {
         <h1>{selected.title}</h1>
         <div className="article-meta-row">
           <span><Clock3 size={15} /> {readingMinutes} min read</span>
+          <span><Eye size={15} /> {Number(selected.views_count||0).toLocaleString()} views</span>
+          <button type="button" className="save-story-button" onClick={()=>toggleSaved(selected)}><Bookmark size={15} fill={isSaved?'currentColor':'none'}/>{isSaved?'Saved':'Save for later'}</button>
           {selected.author && <span>By {selected.author}</span>}
           {(selected.published_at || selected.created_at) && <span>{new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(selected.published_at || selected.created_at))}</span>}
         </div>
@@ -567,7 +578,7 @@ if (window.location.pathname === "/about") {
    <button className="icon-btn mobile-menu" onClick={()=>setMenu(!menu)} aria-label="Open menu">{menu?<X/>:<Menu/>}</button>
    <a className="brand" href="/" aria-label="The Daily Brief home" onClick={e=>{e.preventDefault();setSelected(null);window.history.pushState({}, "", "/");window.scrollTo({top:0,behavior:"smooth"});}}><img className="brand-logo" src={siteBranding.headerLogo || "/daily-brief-logo.svg"} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/daily-brief-logo.svg"; }} alt="The Daily Brief — Kashmir, India, World, Explained" /></a>
    <nav className={menu?'nav open':'nav'}>{categories.slice(1).map(c=><button key={c} onClick={()=>{setActive(c);setSelected(null);setMenu(false)}}>{c}</button>)}</nav>
-   <div className="header-actions"><label className="searchbox"><Search size={16}/><input placeholder="Search stories" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null)}}/></label><button className="subscribe-btn" onClick={()=>document.getElementById('newsletter').scrollIntoView({behavior:'smooth'})}>Subscribe <ArrowUpRight size={15}/></button></div>
+   <div className="header-actions"><button type="button" className="theme-toggle" onClick={()=>setDarkMode(value=>!value)} aria-label={darkMode?'Switch to light mode':'Switch to dark mode'} title={darkMode?'Light mode':'Dark mode'}>{darkMode?<Sun size={17}/>:<Moon size={17}/>}</button><button type="button" className="saved-header-button" onClick={()=>document.getElementById('saved-stories')?.scrollIntoView({behavior:'smooth'})}><Bookmark size={14}/> Saved ({savedIds.length})</button><label className="searchbox"><Search size={16}/><input placeholder="Search stories" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null)}}/></label><button className="subscribe-btn" onClick={()=>document.getElementById('newsletter').scrollIntoView({behavior:'smooth'})}>Subscribe <ArrowUpRight size={15}/></button></div>
   </header>
 
   {allStories.some((story) => story.is_breaking) && (
@@ -604,9 +615,11 @@ if (window.location.pathname === "/about") {
     {featured ? <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt={featured.title}/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article> : <div className="empty">{publishedArticlesError ? `Stories could not load: ${publishedArticlesError}` : 'No published stories yet. Please check back soon.'}</div>}
     <aside className="side-brief"><div className="section-label">THE EDITOR'S BRIEFING <span>01 — 03</span></div><h3>Beyond the noise.<br/>Towards understanding.</h3><p>We focus on the context behind the headlines: the people, policies and ideas shaping tomorrow.</p><div className="side-stat"><strong>01</strong><span>Context before commentary</span></div><div className="side-stat"><strong>02</strong><span>Curiosity across borders</span></div><div className="side-stat"><strong>03</strong><span>Clarity over noise</span></div></aside>
    </section>
+   {savedStories.length>0&&<section className="latest saved-stories-section" id="saved-stories"><div className="section-heading"><div><div className="eyebrow">YOUR READING LIST</div><h2>Saved stories</h2></div></div><div className="story-grid">{savedStories.map(story=><article className="story-card" key={story.id} onClick={()=>openStory(story)}><div className="story-image"><img src={story.image} alt=""/><span>{story.category}</span></div><div className="story-meta">{story.category}</div><h3>{story.title}</h3><button type="button" className="save-card-button" onClick={event=>{event.stopPropagation();toggleSaved(story);}}><Bookmark size={14} fill="currentColor"/> Remove from saved</button></article>)}</div></section>}
    <section className="latest" id="latest"><div className="section-heading"><div><div className="eyebrow">STAY INFORMED</div><h2>{active==='All'?'Latest stories':active+' stories'}</h2></div><div className="filters">{categories.map(c=><button className={active===c?'active':''} key={c} onClick={()=>setActive(c)}>{c}</button>)}</div></div>
-    {filtered.length?<div className="story-grid">{filtered.filter(s=>!s.featured || active!=='All' || query || filtered.length===1).map(s=><article className="story-card" key={s.id} onClick={()=>openStory(s)}><div className="story-image"><img src={s.image} alt=""/><span>{s.category}</span></div><div className="story-meta">{s.tag} <span>·</span> {s.read}</div><h3>{s.title}</h3><p>{s.excerpt}</p><div className="card-bottom">{s.author}<ArrowUpRight size={16}/></div></article>)}</div>:<div className="empty">No stories match that search. Try another keyword or category.</div>}
+    {filtered.length?<div className="story-grid">{filtered.filter(s=>!s.featured || active!=='All' || query || filtered.length===1).map(s=><article className="story-card" key={s.id} onClick={()=>openStory(s)}><div className="story-image"><img src={s.image} alt=""/><span>{s.category}</span></div><div className="story-meta">{s.tag} <span>·</span> {s.read}</div><h3>{s.title}</h3><p>{s.excerpt}</p><div className="card-bottom"><span>{s.author} · <Eye size={12} style={{display:'inline',verticalAlign:'middle'}}/> {Number(s.views_count||0).toLocaleString()}</span><button type="button" className="save-card-button" aria-label={savedIds.includes(String(s.id))?'Remove saved story':'Save story'} onClick={event=>{event.stopPropagation();toggleSaved(s);}}><Bookmark size={15} fill={savedIds.includes(String(s.id))?'currentColor':'none'}/></button><ArrowUpRight size={16}/></div></article>)}</div>:<div className="empty">No stories match that search. Try another keyword or category.</div>}
    </section>
+   {mostReadStories.length>0&&<section className="latest most-read-section"><div className="section-heading"><div><div className="eyebrow">READER FAVOURITES</div><h2>Most read stories</h2></div></div><div className="story-grid">{mostReadStories.map(story=><article className="story-card" key={story.id} onClick={()=>openStory(story)}><div className="story-image"><img src={story.image} alt=""/><span>{story.category}</span></div><div className="story-meta"><Eye size={12} style={{display:'inline',verticalAlign:'middle'}}/> {Number(story.views_count||0).toLocaleString()} VIEWS</div><h3>{story.title}</h3><p>{story.excerpt}</p></article>)}</div></section>}
    <section className="newsletter" id="newsletter"><div><div className="eyebrow">THE DAILY BRIEFING</div><h2>A sharper view<br/><i>of the day.</i></h2><p>A considered digest of the stories shaping our world.</p></div><form onSubmit={handleNewsletterSubmit}><label htmlFor="email">GET THE NEWSLETTER</label><div className="email-row"><input id="email" type="email" required maxLength="254" autoComplete="email" placeholder="Your email address" value={email} onChange={e=>{setEmail(e.target.value);if(newsletterStatus!=='idle'){setNewsletterStatus('idle');setNewsletterMessage('');}}} disabled={newsletterStatus==='submitting'}/><button type="submit" disabled={newsletterStatus==='submitting'}>{newsletterStatus==='submitting'?'Saving…':newsletterStatus==='success'?'Subscribed':'Sign me up'} <ArrowUpRight size={16}/></button></div><small role="status" aria-live="polite">{newsletterMessage || 'No noise. Just the stories worth your time.'}</small><small>By subscribing, you agree to receive email updates from The Daily Brief.</small></form></section>
   </main>
   <footer><a className="brand footer-brand" href="/" aria-label="The Daily Brief home"><img className="brand-logo" src={siteBranding.footerLogo || siteBranding.headerLogo || "/daily-brief-logo.svg"} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/daily-brief-logo.svg"; }} alt="The Daily Brief" /></a><p>Independent journalism. Clear perspectives.</p><span>© 2026 The Daily Brief</span><a href="/about">About Us</a><a href="/contact">Contact Us</a><a href="/privacy-policy">Privacy Policy</a></footer>
