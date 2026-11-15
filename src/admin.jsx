@@ -26,6 +26,12 @@ export default function Admin() {
   const [newsletterBody, setNewsletterBody] = useState("");
   const [newsletterSending, setNewsletterSending] = useState(false);
   const [newsletterResult, setNewsletterResult] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
 
   const loadArticles = useCallback(async () => {
     const { data, error } = await supabase
@@ -280,6 +286,44 @@ export default function Admin() {
     }
   }
 
+
+  async function saveProfile(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setProfileMessage("Admin authorization is required.");
+      return;
+    }
+    setProfileSaving(true);
+    setProfileMessage("");
+    try {
+      const metadata = {
+        ...user.user_metadata,
+        full_name: profileName.trim(),
+        avatar_url: profileAvatarUrl.trim(),
+      };
+      const { data, error } = await supabase.auth.updateUser({ data: metadata });
+      if (error) throw error;
+      let notices = ["Profile details saved."];
+      if (profileEmail.trim().toLowerCase() !== (user.email || "").toLowerCase()) {
+        const { error: emailError } = await supabase.auth.updateUser({ email: profileEmail.trim().toLowerCase() });
+        if (emailError) throw emailError;
+        notices.push("Email change requested. Confirm it using the link sent by Supabase.");
+      }
+      if (newPassword) {
+        if (newPassword.length < 8) throw new Error("Password must be at least 8 characters.");
+        const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+        if (passwordError) throw passwordError;
+        notices.push("Password updated.");
+        setNewPassword("");
+      }
+      if (data?.user) setUser(data.user);
+      setProfileMessage(notices.join(" "));
+    } catch (error) {
+      setProfileMessage(error?.message || "Profile could not be updated.");
+    } finally {
+      setProfileSaving(false);
+    }
+  }
 
   async function logout() {
     const { error } = await supabase.auth.signOut();
