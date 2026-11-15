@@ -22,6 +22,10 @@ export default function Admin() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [newsletterSubject, setNewsletterSubject] = useState("");
+  const [newsletterBody, setNewsletterBody] = useState("");
+  const [newsletterSending, setNewsletterSending] = useState(false);
+  const [newsletterResult, setNewsletterResult] = useState("");
 
   const loadArticles = useCallback(async () => {
     const { data, error } = await supabase
@@ -239,6 +243,43 @@ export default function Admin() {
     setMessage("Article deleted successfully.");
   }
 
+  async function sendNewsletter(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setNewsletterResult("Admin authorization is required.");
+      return;
+    }
+    if (!newsletterSubject.trim() || !newsletterBody.trim()) {
+      setNewsletterResult("Enter a subject and newsletter message.");
+      return;
+    }
+    if (!window.confirm("Send this newsletter to all active subscribers? This action cannot be undone.")) return;
+
+    setNewsletterSending(true);
+    setNewsletterResult("Sending newsletter…");
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Your admin session has expired. Please log in again.");
+
+      const { data, error } = await supabase.functions.invoke("newsletter-send", {
+        body: { subject: newsletterSubject.trim(), text: newsletterBody.trim() },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setNewsletterResult(`Delivery finished: ${data.sent || 0} sent, ${data.failed || 0} failed, out of ${data.total || 0} active subscribers.`);
+      if ((data.sent || 0) > 0 && (data.failed || 0) === 0) {
+        setNewsletterSubject("");
+        setNewsletterBody("");
+      }
+    } catch (error) {
+      setNewsletterResult(error?.message || "Newsletter could not be sent.");
+    } finally {
+      setNewsletterSending(false);
+    }
+  }
+
   async function logout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -293,6 +334,19 @@ export default function Admin() {
           {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
         </form>
         {message && <p role="status" aria-live="polite">{message}</p>}
+      </section>
+
+      <section style={styles.card}>
+        <h2>Send Newsletter</h2>
+        <p>Send an update to all active subscribers. Every email includes an unsubscribe link.</p>
+        <form onSubmit={sendNewsletter}>
+          <label htmlFor="newsletter-subject">Email Subject</label>
+          <input id="newsletter-subject" style={styles.input} value={newsletterSubject} onChange={(event) => setNewsletterSubject(event.target.value)} maxLength={180} required placeholder="The Daily Brief — Weekly Update" />
+          <label htmlFor="newsletter-body">Message</label>
+          <textarea id="newsletter-body" style={{ ...styles.input, minHeight: "180px" }} value={newsletterBody} onChange={(event) => setNewsletterBody(event.target.value)} required placeholder="Write the newsletter message…" />
+          <button style={styles.button} type="submit" disabled={newsletterSending}>{newsletterSending ? "Sending…" : "Send to Subscribers"}</button>
+        </form>
+        {newsletterResult && <p role="status" aria-live="polite">{newsletterResult}</p>}
       </section>
 
       <section style={styles.card}>
