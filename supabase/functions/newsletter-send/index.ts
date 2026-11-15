@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
   const failures: string[] = [];
   // Keep delivery sequential to respect provider rate limits and make results predictable.
   for (const subscriber of subscribers) {
-    const unsubscribeUrl = `${publicSiteUrl.replace(/\/$/, "")}/functions/v1/newsletter-unsubscribe?token=${encodeURIComponent(subscriber.unsubscribe_token)}`;
+    const unsubscribeUrl = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/newsletter-unsubscribe?token=${encodeURIComponent(subscriber.unsubscribe_token)}`;
     const footerHtml = `<hr><p style="font-size:12px;color:#666">You received this email because you subscribed to The Daily Brief. <a href="${unsubscribeUrl}">Unsubscribe</a>.</p>`;
     const footerText = `\n\nYou received this email because you subscribed to The Daily Brief. Unsubscribe: ${unsubscribeUrl}`;
     try {
