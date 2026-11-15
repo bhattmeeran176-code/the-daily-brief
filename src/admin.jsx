@@ -337,6 +337,19 @@ export default function Admin() {
       </section>
 
       <section style={styles.card}>
+        <h2>Send Newsletter</h2>
+        <p>Send an update to all active subscribers. Every email includes an unsubscribe link.</p>
+        <form onSubmit={sendNewsletter}>
+          <label htmlFor="newsletter-subject">Email Subject</label>
+          <input id="newsletter-subject" style={styles.input} value={newsletterSubject} onChange={(event) => setNewsletterSubject(event.target.value)} maxLength={180} required placeholder="The Daily Brief — Weekly Update" />
+          <label htmlFor="newsletter-body">Message</label>
+          <textarea id="newsletter-body" style={{ ...styles.input, minHeight: "180px" }} value={newsletterBody} onChange={(event) => setNewsletterBody(event.target.value)} required placeholder="Write the newsletter message…" />
+          <button style={styles.button} type="submit" disabled={newsletterSending}>{newsletterSending ? "Sending…" : "Send to Subscribers"}</button>
+        </form>
+        {newsletterResult && <p role="status" aria-live="polite">{newsletterResult}</p>}
+      </section>
+
+      <section style={styles.card}>
         <h2>Manage Articles</h2>
         {articles.length === 0 ? <p>No articles added yet.</p> : articles.map((article) => (
           <div key={article.id} style={{ borderBottom: "1px solid #eee", padding: "15px 0" }}>
