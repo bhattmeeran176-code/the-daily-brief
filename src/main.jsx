@@ -200,7 +200,7 @@ function App(){
     ...article,
     tag: article.category,
     excerpt: (article.content || article.excerpt || article.description || "")
-      .replace(/\\s+/g, " ").slice(0, 180),
+      .replace(/\s+/g, " ").slice(0, 180),
     image: article.image_url || article.image,
     featured: index === 0
   })),
