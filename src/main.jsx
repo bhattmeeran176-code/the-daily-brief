@@ -6,14 +6,6 @@ import AdminLogin from './AdminLogin.jsx';
 import PasswordReset from './PasswordReset.jsx';
 import Admin from './admin.jsx';
 import { supabase } from './supabase';
-const stories = [
- {id:1, category:'World', tag:'GEOPOLITICS', title:'A changing world order: the questions shaping global diplomacy', excerpt:'From shifting alliances to new economic priorities, leaders are navigating a more complex international landscape.', author:'Editorial Desk', date:'November 7, 2026', read:'6 min read', image:'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1400&q=85', featured:true},
- {id:2, category:'Technology', tag:'INNOVATION', title:'The next chapter of artificial intelligence is being written now', excerpt:'Researchers and businesses are working through the opportunities, risks and rules surrounding rapidly advancing AI.', author:'Maya Chen', date:'November 6, 2026', read:'5 min read', image:'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1000&q=85'},
- {id:3, category:'Business', tag:'ECONOMY', title:'Why the global economy is watching energy markets closely', excerpt:'Energy prices remain a key signal for inflation, industry and household budgets around the world.', author:'Daniel Brooks', date:'November 6, 2026', read:'4 min read', image:'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1000&q=85'},
- {id:4, category:'Science', tag:'CLIMATE', title:'Cities rethink how to prepare for a hotter future', excerpt:'Urban planners are exploring greener streets, better public spaces and more resilient infrastructure.', author:'Leila Hassan', date:'November 5, 2026', read:'7 min read', image:'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1000&q=85'},
- {id:5, category:'India', tag:'SOCIETY', title:'The public services conversation: access, trust and accountability', excerpt:'Across India, debates about public services increasingly focus on delivery, transparency and local needs.', author:'Newsroom', date:'November 5, 2026', read:'5 min read', image:'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1000&q=85'},
- {id:6, category:'Culture', tag:'CULTURE', title:'How independent voices are changing the media landscape', excerpt:'Digital publishing is opening new ways for readers to discover perspectives and follow important stories.', author:'Aisha Rahman', date:'November 4, 2026', read:'4 min read', image:'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1000&q=85'}
-];
 const categories=['All','World','India','Jammu & Kashmir','Business','Technology','Science','Culture'];
 const slugify = (value = '') => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -204,8 +196,7 @@ function App(){
     image: article.image_url || article.image,
     featured: index === 0
   })),
-  ...stories
-];
+ ];
 
 const filtered = useMemo(
   () => allStories.filter(s =>
@@ -214,7 +205,7 @@ const filtered = useMemo(
   ),
   [active, query, publishedArticles]
 );
- const featured=allStories[0] || stories[0];
+ const featured=allStories[0] || null;
 
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
@@ -278,7 +269,7 @@ useEffect(() => {
       return;
     }
 
-    const allArticles = [...publishedArticles, ...stories];
+    const allArticles = publishedArticles;
 
     const article = allArticles.find((s) =>
       slugify(s.slug || s.title) === slug
@@ -507,7 +498,7 @@ if (window.location.pathname === "/about") {
   <main>
    <section className="hero-intro"><div className="eyebrow"><span className="dot"></span> THE WORLD, IN CONTEXT</div><h1>Clarity in a world<br/><i>of headlines.</i></h1><p>Independent perspectives and essential stories from around the globe. Understand what matters — and why.</p></section>
    <section className="lead-grid">
-    <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt="World diplomacy editorial image"/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article>
+    {featured ? <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt={featured.title}/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article> : <div className="empty">No published stories yet. Please check back soon.</div>}
     <aside className="side-brief"><div className="section-label">THE EDITOR'S BRIEFING <span>01 — 03</span></div><h3>Beyond the noise.<br/>Towards understanding.</h3><p>We focus on the context behind the headlines: the people, policies and ideas shaping tomorrow.</p><div className="side-stat"><strong>01</strong><span>Context before commentary</span></div><div className="side-stat"><strong>02</strong><span>Curiosity across borders</span></div><div className="side-stat"><strong>03</strong><span>Clarity over noise</span></div></aside>
    </section>
    <section className="latest" id="latest"><div className="section-heading"><div><div className="eyebrow">STAY INFORMED</div><h2>{active==='All'?'Latest stories':active+' stories'}</h2></div><div className="filters">{categories.map(c=><button className={active===c?'active':''} key={c} onClick={()=>setActive(c)}>{c}</button>)}</div></div>
