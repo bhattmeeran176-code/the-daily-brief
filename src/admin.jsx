@@ -1,7 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 
+const ADMIN_EMAIL = "thedailybrieffff@gmail.com";
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
 export default function Admin() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [articles, setArticles] = useState([]);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("World");
@@ -9,321 +15,276 @@ export default function Admin() {
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
-useEffect(() => {
-  async function loadArticles() {
+
+  const loadArticles = useCallback(async () => {
     const { data, error } = await supabase
       .from("articles")
       .select("*")
       .order("created_at", { ascending: false });
-
     if (error) {
-      setMessage("Error: " + error.message);
+      setMessage("Articles could not be loaded: " + error.message);
+      return;
+    }
+    setArticles(data || []);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function verifyAdmin() {
+      const { data, error } = await supabase.auth.getUser();
+      if (!active) return;
+      const currentUser = data?.user;
+      if (error || !currentUser) {
+        window.location.replace("/admin");
+        return;
+      }
+      if ((currentUser.email || "").toLowerCase() !== ADMIN_EMAIL) {
+        setMessage("This account is not authorized to access the admin dashboard.");
+        setAuthLoading(false);
+        return;
+      }
+      setUser(currentUser);
+      setAuthLoading(false);
+    }
+    verifyAdmin();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const currentUser = session?.user;
+      if (!currentUser) {
+        window.location.replace("/admin");
+        return;
+      }
+      if ((currentUser.email || "").toLowerCase() !== ADMIN_EMAIL) {
+        setUser(null);
+        setMessage("This account is not authorized to access the admin dashboard.");
+        return;
+      }
+      setUser(currentUser);
+    });
+    return () => {
+      active = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user) loadArticles();
+  }, [user, loadArticles]);
+
+  function validateImage(file) {
+    if (!file) return "";
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      return "Please choose a JPG, PNG, WEBP or GIF image.";
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      return "Image size must be 5 MB or less.";
+    }
+    return "";
+  }
+
+  function handleImageChange(event) {
+    const file = event.target.files?.[0] || null;
+    const validationError = validateImage(file);
+    if (validationError) {
+      event.target.value = "";
+      setImageFile(null);
+      setMessage(validationError);
+      return;
+    }
+    setImageFile(file);
+    setMessage("");
+  }
+
+  async function addArticle(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setMessage("Admin authorization is required. Please log in again.");
+      return;
+    }
+    if (!title.trim() || !content.trim()) {
+      setMessage("Please enter the article title and content.");
+      return;
+    }
+    const imageError = validateImage(imageFile);
+    if (imageError) {
+      setMessage(imageError);
       return;
     }
 
-    setArticles(data || []);
+    setSaving(true);
+    let uploadedPath = null;
+    let finalImageUrl = imageUrl.trim();
+
+    try {
+      if (imageFile) {
+        setUploading(true);
+        const extensionByType = {
+          "image/jpeg": "jpg",
+          "image/png": "png",
+          "image/webp": "webp",
+          "image/gif": "gif",
+        };
+        const fileName = `${Date.now()}-${crypto.randomUUID()}.${extensionByType[imageFile.type]}`;
+        const { error: uploadError } = await supabase.storage
+          .from("article-images")
+          .upload(fileName, imageFile, {
+            contentType: imageFile.type,
+            cacheControl: "3600",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+        uploadedPath = fileName;
+        const { data: publicData } = supabase.storage
+          .from("article-images")
+          .getPublicUrl(fileName);
+        finalImageUrl = publicData.publicUrl;
+      }
+
+      const articleValues = {
+        title: title.trim(),
+        category,
+        image_url: finalImageUrl,
+        content: content.trim(),
+      };
+
+      const result = editingId
+        ? await supabase.from("articles").update(articleValues).eq("id", editingId).select().single()
+        : await supabase.from("articles").insert([{ ...articleValues, status: "Draft" }]).select().single();
+
+      if (result.error) throw result.error;
+      setArticles((previous) =>
+        editingId
+          ? previous.map((article) => article.id === result.data.id ? result.data : article)
+          : [result.data, ...previous]
+      );
+      setTitle("");
+      setCategory("World");
+      setContent("");
+      setImageUrl("");
+      setImageFile(null);
+      setEditingId(null);
+      const fileInput = document.getElementById("article-image-file");
+      if (fileInput) fileInput.value = "";
+      setMessage(editingId ? "Article updated successfully." : "Article saved as draft.");
+    } catch (error) {
+      if (uploadedPath) {
+        await supabase.storage.from("article-images").remove([uploadedPath]);
+      }
+      setMessage("Could not save article: " + (error?.message || "Unknown error"));
+    } finally {
+      setUploading(false);
+      setSaving(false);
+    }
   }
 
-  loadArticles();
-}, []);
- async function addArticle(e) {
-  e.preventDefault();
-const { data: { user }, error: authError } =
-  await supabase.auth.getUser();
-   const { data: sessionData } = await supabase.auth.getSession();
-console.log("SESSION:", sessionData.session);
-setMessage(
-  authError
-    ? authError.message
-    : user
-    ? `Authenticated: ${user.email} | ID: ${user.id}`
-    : "No authenticated user found"
-);
-if (authError || !user) {
-  setMessage(
-    authError
-      ? authError.message
-      : "No authenticated user found. Please log in again."
-  );
-  return;
-}
-   
-  if (!title.trim() || !content.trim()) {
-    setMessage("Please enter title and article content.");
-    return;
-  }
-let finalImageUrl = imageUrl;
-
-if (imageFile) {
-  setUploading(true);
-
-  const fileExt = imageFile.name.split('.').pop();
-  const fileName = `${Date.now()}.${fileExt}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from('article-images')
-    .upload(fileName, imageFile);
-
-  setUploading(false);
-
-  if (uploadError) {
-    setMessage("Image upload error: " + uploadError.message);
-    return;
+  async function publishArticle(id) {
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
+    const { data, error } = await supabase
+      .from("articles")
+      .update({ status: "Published" })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) {
+      setMessage("Publish error: " + error.message);
+      return;
+    }
+    setArticles((previous) => previous.map((article) => article.id === id ? data : article));
+    setMessage("Article published successfully.");
   }
 
-  const { data: publicData } = supabase.storage
-    .from('article-images')
-    .getPublicUrl(fileName);
-
-  finalImageUrl = publicData.publicUrl;
-}
-  let data;
-let error;
-
-if (editingId) {
-  const result = await supabase
-    .from("articles")
-    .update({
-      title,
-      category,
-      image_url: finalImageUrl,
-      content
-    })
-    .eq("id", editingId)
-    .select()
-    .single();
-
-  data = result.data;
-  error = result.error;
-} else {
-  const result = await supabase
-    .from("articles")
-    .insert([{
-      title,
-      category,
-      image_url: finalImageUrl,
-      content,
-      status: "Draft"
-    }])
-    .select()
-    .single();
-
-  data = result.data;
-  error = result.error;
-}
-
-  if (error) {
-    setMessage("Error: " + error.message);
-    return;
+  function editArticle(article) {
+    setTitle(article.title || "");
+    setCategory(article.category || "World");
+    setContent(article.content || "");
+    setImageUrl(article.image_url || "");
+    setImageFile(null);
+    setEditingId(article.id);
+    setMessage("Editing article. Choose a new image only if you want to replace the current one.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  setArticles((prev) =>
-  editingId
-    ? prev.map((article) => article.id === data.id ? data : article)
-    : [data, ...prev]
-);
-setTitle("");
-setContent("");
-setImageUrl("");
-setImageFile(null);
-setEditingId(null);
-setMessage(editingId ? "Article updated successfully!" : "Article saved successfully!");
- }
-
-async function publishArticle(id) {
-  const { data, error } = await supabase
-    .from("articles")
-    .update({ status: "Published" })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    setMessage("Publish error: " + error.message);
-    return;
-  }
-
-  setArticles(
-    articles.map((article) =>
-      article.id === id ? data : article
-    )
-  );
-
-  setMessage("Article published successfully!");
-}
-function editArticle(article) {
-  setTitle(article.title || "");
-  setCategory(article.category || "World");
-  setContent(article.content || "");
-  setImageUrl(article.image_url || "");
-  setImageFile(null);
-  setEditingId(article.id);
-  setMessage("Editing article...");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
   async function deleteArticle(id) {
-  const { error } = await supabase
-    .from("articles")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    setMessage("Delete error: " + error.message);
-    return;
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
+    if (!window.confirm("Delete this article? This cannot be undone.")) return;
+    const { error } = await supabase.from("articles").delete().eq("id", id);
+    if (error) {
+      setMessage("Delete error: " + error.message);
+      return;
+    }
+    setArticles((previous) => previous.filter((article) => article.id !== id));
+    setMessage("Article deleted successfully.");
   }
 
-  setArticles((prev) => prev.filter((article) => article.id !== id));
-  setMessage("Article deleted successfully!");
+  async function logout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      setMessage("Logout error: " + error.message);
+      return;
+    }
+    window.location.replace("/admin");
   }
 
   const styles = {
-    page: {
-      minHeight: "100vh",
-      background: "#f4f6fa",
-      padding: "24px",
-      fontFamily: "Arial, sans-serif",
-      color: "#172033",
-    },
-    card: {
-      background: "#fff",
-      padding: "20px",
-      borderRadius: "12px",
-      marginBottom: "20px",
-      boxShadow: "0 2px 10px #0000000a",
-    },
-    input: {
-      width: "100%",
-      padding: "12px",
-      margin: "8px 0 16px",
-      border: "1px solid #d9deea",
-      borderRadius: "7px",
-      boxSizing: "border-box",
-    },
-    button: {
-      background: "#172033",
-      color: "#fff",
-      padding: "11px 18px",
-      border: "none",
-      borderRadius: "7px",
-      cursor: "pointer",
-    },
+    page: { minHeight: "100vh", background: "#f4f6fa", padding: "24px", fontFamily: "Arial, sans-serif", color: "#172033" },
+    card: { background: "#fff", padding: "20px", borderRadius: "12px", marginBottom: "20px", boxShadow: "0 2px 10px #0000000a" },
+    input: { width: "100%", padding: "12px", margin: "8px 0 16px", border: "1px solid #d9deea", borderRadius: "7px", boxSizing: "border-box" },
+    button: { background: "#172033", color: "#fff", padding: "11px 18px", border: "none", borderRadius: "7px", cursor: "pointer", marginRight: "8px", marginTop: "8px" },
   };
+
+  if (authLoading) {
+    return <main style={styles.page}><section style={styles.card}>Checking admin access…</section></main>;
+  }
+  if (!user) {
+    return <main style={styles.page}><section style={styles.card}><h2>Access restricted</h2><p>{message || "This account cannot access the admin dashboard."}</p><a href="/admin">Go to admin login</a></section></main>;
+  }
 
   return (
     <main style={styles.page}>
       <header style={styles.card}>
-        <h1>The Daily Brief</h1>
-        <p>Admin Dashboard</p>
-        <h2>Welcome, Admin!</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <div><h1>The Daily Brief</h1><p>Admin Dashboard</p></div>
+          <button style={styles.button} onClick={logout}>Log out</button>
+        </div>
+        <h2>Welcome, Admin</h2>
         <p>Total Articles: {articles.length}</p>
-        <p>
-          Published:{" "}
-          {articles.filter((a) => a.status === "Published").length}
-        </p>
+        <p>Published: {articles.filter((article) => article.status === "Published").length}</p>
       </header>
 
       <section style={styles.card}>
-        <h2>Create New Article</h2>
-
+        <h2>{editingId ? "Edit Article" : "Create New Article"}</h2>
         <form onSubmit={addArticle}>
-          <label>Article Title</label>
-          <input
-            style={styles.input}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter article title"
-          />
-
-          <label>Category</label>
-          <select
-            style={styles.input}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option>World</option>
-            <option>India</option>
-            <option>Jammu & Kashmir</option>
-            <option>Technology</option>
-            <option>Business</option>
-            <option>Science</option>
+          <label htmlFor="article-title">Article Title</label>
+          <input id="article-title" style={styles.input} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Enter article title" required />
+          <label htmlFor="article-category">Category</label>
+          <select id="article-category" style={styles.input} value={category} onChange={(event) => setCategory(event.target.value)}>
+            <option>World</option><option>India</option><option>Jammu &amp; Kashmir</option><option>Technology</option><option>Business</option><option>Science</option><option>Culture</option>
           </select>
-          <label>Upload Article Image</label>
-<input
-  style={styles.input}
-  type="file"
-  accept="image/*"
-  onChange={(e) => setImageFile(e.target.files[0] || null)}
-/>
-<label>Article Image URL</label>
-<input
-  style={styles.input}
-  type="url"
-  value={imageUrl}
-  onChange={(e) => setImageUrl(e.target.value)}
-  placeholder="Paste image URL here"
-/>
-          <label>Article Content</label>
-          <textarea
-            style={{ ...styles.input, minHeight: "150px" }}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Write your article here..."
-          />
-
-          <button style={styles.button} type="submit">
-            {uploading ? "Uploading..." : editingId ? "Update Article" : "Save Article"}
-          </button>
+          <label htmlFor="article-image-file">Upload Article Image (JPG, PNG, WEBP or GIF; max 5 MB)</label>
+          <input id="article-image-file" style={styles.input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} />
+          <label htmlFor="article-image-url">Or Article Image URL</label>
+          <input id="article-image-url" style={styles.input} type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Paste image URL here" />
+          <label htmlFor="article-content">Article Content</label>
+          <textarea id="article-content" style={{ ...styles.input, minHeight: "150px" }} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write your article here…" required />
+          <button style={styles.button} type="submit" disabled={saving}>{uploading ? "Uploading image…" : saving ? "Saving…" : editingId ? "Update Article" : "Save Article"}</button>
+          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
         </form>
-
-        {message && <p>{message}</p>}
+        {message && <p role="status" aria-live="polite">{message}</p>}
       </section>
 
       <section style={styles.card}>
         <h2>Manage Articles</h2>
-
-        {articles.length === 0 ? (
-          <p>No articles added yet.</p>
-        ) : (
-          articles.map((article) => (
-            <div
-              key={article.id}
-              style={{
-                borderBottom: "1px solid #eee",
-                padding: "15px 0",
-              }}
-            >
-              <h3>{article.title}</h3>
-              <p>{article.category} · {article.status}</p>
-
-              {article.status === "Draft" && (
-                <button
-                  style={styles.button}
-                  onClick={() => publishArticle(article.id)}
-                >
-                  Publish
-                </button>
-              )}
-<button
-  style={styles.button}
-  onClick={() => editArticle(article)}
->
-  Edit
-</button>
-              <button
-                style={{
-                  ...styles.button,
-                  background: "#c0392b",
-                  marginLeft: "8px",
-                }}
-                onClick={() => deleteArticle(article.id)}
-              >
-                Delete
-              </button>
-            </div>
-          ))
-        )}
+        {articles.length === 0 ? <p>No articles added yet.</p> : articles.map((article) => (
+          <div key={article.id} style={{ borderBottom: "1px solid #eee", padding: "15px 0" }}>
+            <h3>{article.title}</h3>
+            <p>{article.category} · {article.status}</p>
+            {article.status === "Draft" && <button style={styles.button} onClick={() => publishArticle(article.id)}>Publish</button>}
+            <button style={styles.button} onClick={() => editArticle(article)}>Edit</button>
+            <button style={{ ...styles.button, background: "#c0392b" }} onClick={() => deleteArticle(article.id)}>Delete</button>
+          </div>
+        ))}
       </section>
     </main>
   );

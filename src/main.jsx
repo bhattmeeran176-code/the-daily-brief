@@ -14,7 +14,7 @@ const stories = [
  {id:5, category:'India', tag:'SOCIETY', title:'The public services conversation: access, trust and accountability', excerpt:'Across India, debates about public services increasingly focus on delivery, transparency and local needs.', author:'Newsroom', date:'November 5, 2026', read:'5 min read', image:'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?auto=format&fit=crop&w=1000&q=85'},
  {id:6, category:'Culture', tag:'CULTURE', title:'How independent voices are changing the media landscape', excerpt:'Digital publishing is opening new ways for readers to discover perspectives and follow important stories.', author:'Aisha Rahman', date:'November 4, 2026', read:'4 min read', image:'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1000&q=85'}
 ];
-const categories=['All','World','India','Business','Technology','Science','Culture'];
+const categories=['All','World','India','Jammu & Kashmir','Business','Technology','Science','Culture'];
 
 function ContactPage() {
   const [form, setForm] = useState({
