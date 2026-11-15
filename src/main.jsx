@@ -210,6 +210,7 @@ const filtered = useMemo(
   [active, query, publishedArticles]
 );
  const featured=allStories[0] || null;
+ const latestUpdates = allStories.slice(0, 4);
 
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
@@ -568,6 +569,21 @@ if (window.location.pathname === "/about") {
    <nav className={menu?'nav open':'nav'}>{categories.slice(1).map(c=><button key={c} onClick={()=>{setActive(c);setSelected(null);setMenu(false)}}>{c}</button>)}</nav>
    <div className="header-actions"><label className="searchbox"><Search size={16}/><input placeholder="Search stories" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null)}}/></label><button className="subscribe-btn" onClick={()=>document.getElementById('newsletter').scrollIntoView({behavior:'smooth'})}>Subscribe <ArrowUpRight size={15}/></button></div>
   </header>
+
+  {latestUpdates.length > 0 && (
+   <section className="latest-updates" aria-label="Latest news updates">
+    <div className="latest-updates-label"><span className="latest-updates-dot" />LATEST UPDATES</div>
+    <div className="latest-updates-track">
+     {latestUpdates.map((story) => (
+      <button type="button" className="latest-update-item" key={story.id} onClick={() => openStory(story)}>
+       <span>{story.category || "News"}</span>
+       <strong>{story.title}</strong>
+       <ArrowUpRight size={14} />
+      </button>
+     ))}
+    </div>
+   </section>
+  )}
 
   <main>
    <section className="hero-intro"><div className="eyebrow"><span className="dot"></span> THE WORLD, IN CONTEXT</div><h1>Clarity in a world<br/><i>of headlines.</i></h1><p>Independent perspectives and essential stories from around the globe. Understand what matters — and why.</p></section>
