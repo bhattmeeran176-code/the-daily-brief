@@ -103,3 +103,15 @@ img { max-width: 100%; }
 .latest-update-item svg{flex:0 0 auto;color:#a45a3b}
 .latest-update-item:hover{background:#e5e8df}
 @media(max-width:600px){.latest-updates{display:block;margin-top:12px}.latest-updates-label{padding:11px 13px}.latest-updates-track{width:100%}.latest-update-item{min-width:235px;padding:13px 14px}}
+
+
+/* Breaking News banner */
+.breaking-news-bar{display:flex;align-items:stretch;gap:0;margin:12px 0 0;border:1px solid #e5c7bd;background:#fff5f1;min-width:0}
+.breaking-news-label{display:flex;align-items:center;gap:9px;flex:0 0 auto;padding:0 17px;background:#a93226;color:#fff;font:700 9px 'DM Sans',sans-serif;letter-spacing:.14em;white-space:nowrap}
+.breaking-pulse{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.2)}
+.breaking-news-track{display:flex;align-items:center;min-width:0;overflow-x:auto}
+.breaking-news-item{display:flex;align-items:center;gap:9px;min-width:240px;max-width:380px;padding:14px 17px;border:0;border-right:1px solid #efd8d0;background:transparent;text-align:left;color:#57251f}
+.breaking-news-item strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11px 'DM Sans',sans-serif}
+.breaking-news-item svg{flex:0 0 auto;color:#a93226}
+.breaking-news-item:hover{background:#fbe9e3}
+@media(max-width:600px){.breaking-news-bar{display:block;margin-top:9px}.breaking-news-label{padding:11px 13px}.breaking-news-track{width:100%}.breaking-news-item{min-width:230px;padding:13px 14px}}
