@@ -234,7 +234,7 @@ const filtered = useMemo(
     return;
   }
   setNewsletterStatus('success');
-  setNewsletterMessage('Thank you! Your email has been subscribed.');
+  setNewsletterMessage('Thank you! Your email has been saved. Newsletter emails will begin once delivery is activated.');
   setEmail('');
  };
  const openStory = (s) => {
