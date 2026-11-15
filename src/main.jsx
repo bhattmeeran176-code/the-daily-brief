@@ -15,6 +15,7 @@ const stories = [
  {id:6, category:'Culture', tag:'CULTURE', title:'How independent voices are changing the media landscape', excerpt:'Digital publishing is opening new ways for readers to discover perspectives and follow important stories.', author:'Aisha Rahman', date:'November 4, 2026', read:'4 min read', image:'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1000&q=85'}
 ];
 const categories=['All','World','India','Jammu & Kashmir','Business','Technology','Science','Culture'];
+const slugify = (value = '') => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 function ContactPage() {
   const [form, setForm] = useState({
@@ -180,7 +181,7 @@ const filtered = useMemo(
   const slug = s.title.toLowerCase().trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  window.history.pushState({}, "", `/?article=${slug}`);
+  window.history.pushState({}, "", `/article/${slug}`);
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 useEffect(() => {
@@ -198,7 +199,9 @@ useEffect(() => {
 }, []);
  useEffect(() => {
   const openFromUrl = () => {
-    const slug = new URLSearchParams(window.location.search).get("article");
+    const legacySlug = new URLSearchParams(window.location.search).get("article");
+    const pathMatch = window.location.pathname.match(/^\/article\/([^/]+)\/?$/);
+    const slug = pathMatch ? decodeURIComponent(pathMatch[1]) : legacySlug;
 
     if (!slug) {
       setSelected(null);
@@ -208,12 +211,13 @@ useEffect(() => {
     const allArticles = [...publishedArticles, ...stories];
 
     const article = allArticles.find((s) =>
-      s.title.toLowerCase().trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "") === slug
+      slugify(s.slug || s.title) === slug
     );
 
-    if (article) setSelected(article);
+    if (article) {
+      setSelected(article);
+      if (legacySlug) window.history.replaceState({}, "", `/article/${slug}`);
+    }
   };
 
   openFromUrl();
@@ -274,7 +278,7 @@ if (existingSchema) existingSchema.remove();
     document.head.appendChild(canonical);
   }
 
-  canonical.href = window.location.href;
+  canonical.href = window.location.origin + `/article/${slugify(selected.slug || selected.title)}`;
  
     let schema = document.querySelector("#article-schema");
 
@@ -291,7 +295,8 @@ if (existingSchema) existingSchema.remove();
       headline: selected.title,
       description: description,
       image: selected.image || selected.image_url || undefined,
-      datePublished: selected.created_at || undefined,
+      datePublished: selected.published_at || selected.created_at || undefined,
+      dateModified: selected.updated_at || selected.created_at || undefined,
       author: {
         "@type": "Organization",
         name: "The Daily Brief",
