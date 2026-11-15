@@ -156,7 +156,7 @@ function PrivacyPage() {
 
 function App(){
  const [publishedArticles, setPublishedArticles] = useState([]);
- const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [subscribed,setSubscribed]=useState(false);
+ const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const allStories = [
   ...publishedArticles.map(article => ({
     ...article,
@@ -176,6 +176,37 @@ const filtered = useMemo(
   [active, query, publishedArticles]
 );
  const featured=stories[0];
+
+ const handleNewsletterSubmit = async (event) => {
+  event.preventDefault();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    setNewsletterStatus('error');
+    setNewsletterMessage('Please enter a valid email address.');
+    return;
+  }
+  setNewsletterStatus('submitting');
+  setNewsletterMessage('');
+  const { error } = await supabase
+    .from('newsletter_subscribers')
+    .insert([{ email: normalizedEmail }]);
+  if (error) {
+    if (error.code === '23505') {
+      setNewsletterStatus('success');
+      setNewsletterMessage('This email is already subscribed.');
+    } else if (error.code === '42P01' || error.code === 'PGRST205') {
+      setNewsletterStatus('error');
+      setNewsletterMessage('Newsletter setup is not finished yet. Please try again later.');
+    } else {
+      setNewsletterStatus('error');
+      setNewsletterMessage('Subscription could not be saved. Please try again later.');
+    }
+    return;
+  }
+  setNewsletterStatus('success');
+  setNewsletterMessage('Thank you! Your email has been subscribed.');
+  setEmail('');
+ };
  const openStory = (s) => {
   setSelected(s);
   const slug = s.title.toLowerCase().trim()
@@ -443,7 +474,7 @@ if (window.location.pathname === "/about") {
    <section className="latest" id="latest"><div className="section-heading"><div><div className="eyebrow">STAY INFORMED</div><h2>{active==='All'?'Latest stories':active+' stories'}</h2></div><div className="filters">{categories.map(c=><button className={active===c?'active':''} key={c} onClick={()=>setActive(c)}>{c}</button>)}</div></div>
     {filtered.length?<div className="story-grid">{filtered.filter(s=>!s.featured || active!=='All' || query).map(s=><article className="story-card" key={s.id} onClick={()=>openStory(s)}><div className="story-image"><img src={s.image} alt=""/><span>{s.category}</span></div><div className="story-meta">{s.tag} <span>·</span> {s.read}</div><h3>{s.title}</h3><p>{s.excerpt}</p><div className="card-bottom">{s.author}<ArrowUpRight size={16}/></div></article>)}</div>:<div className="empty">No stories match that search. Try another keyword or category.</div>}
    </section>
-   <section className="newsletter" id="newsletter"><div><div className="eyebrow">THE DAILY BRIEFING</div><h2>A sharper view<br/><i>of the day.</i></h2><p>A considered digest of the stories shaping our world.</p></div><form onSubmit={e=>{e.preventDefault();if(email.includes('@'))setSubscribed(true)}}><label htmlFor="email">GET THE NEWSLETTER</label><div className="email-row"><input id="email" type="email" required placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)}/><button>{subscribed?'Subscribed':'Sign me up'} <ArrowUpRight size={16}/></button></div><small>{subscribed?'Thanks — newsletter signup is a demo in this first version.':'No noise. Just the stories worth your time.'}</small></form></section>
+   <section className="newsletter" id="newsletter"><div><div className="eyebrow">THE DAILY BRIEFING</div><h2>A sharper view<br/><i>of the day.</i></h2><p>A considered digest of the stories shaping our world.</p></div><form onSubmit={handleNewsletterSubmit}><label htmlFor="email">GET THE NEWSLETTER</label><div className="email-row"><input id="email" type="email" required maxLength="254" autoComplete="email" placeholder="Your email address" value={email} onChange={e=>{setEmail(e.target.value);if(newsletterStatus!=='idle'){setNewsletterStatus('idle');setNewsletterMessage('');}}} disabled={newsletterStatus==='submitting'}/><button type="submit" disabled={newsletterStatus==='submitting'}>{newsletterStatus==='submitting'?'Saving…':newsletterStatus==='success'?'Subscribed':'Sign me up'} <ArrowUpRight size={16}/></button></div><small role="status" aria-live="polite">{newsletterMessage || 'No noise. Just the stories worth your time.'}</small><small>By subscribing, you agree to receive email updates from The Daily Brief.</small></form></section>
   </main>
   <footer><a className="brand footer-brand" href="#" onClick={e=>{e.preventDefault();setSelected(null)}}><span className="brand-mark">DB</span><span>THE DAILY <b>BRIEF</b><small>GLOBAL NEWS, CLEARLY TOLD</small></span></a><p>Independent journalism. Clear perspectives.</p><span>© 2026 The Daily Brief</span><a href="/about">About Us</a><a href="/contact">Contact Us</a><a href="/privacy-policy">Privacy Policy</a></footer>
  </div>
