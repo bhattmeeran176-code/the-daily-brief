@@ -220,6 +220,23 @@ export default function Admin() {
     setMessage("Article published successfully.");
   }
 
+  async function toggleBreakingNews(article) {
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
+    const nextValue = !article.is_breaking;
+    const { data, error } = await supabase
+      .from("articles")
+      .update({ is_breaking: nextValue })
+      .eq("id", article.id)
+      .select()
+      .single();
+    if (error) {
+      setMessage("Breaking News update failed: " + error.message);
+      return;
+    }
+    setArticles((previous) => previous.map((item) => item.id === article.id ? data : item));
+    setMessage(nextValue ? "Article marked as Breaking News." : "Breaking News label removed.");
+  }
+
   async function unpublishArticle(id) {
     if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
     if (!window.confirm("Move this article back to Draft? It will no longer appear on the public website.")) return;
@@ -545,6 +562,11 @@ export default function Admin() {
             {normalizeArticleStatus(article.status) === "draft"
               ? <button style={styles.button} onClick={() => publishArticle(article.id)}>Publish</button>
               : <button style={{ ...styles.button, background: "#687386" }} onClick={() => unpublishArticle(article.id)}>Move to Draft</button>}
+            <button
+              style={{ ...styles.button, background: article.is_breaking ? "#a93226" : "#8a5a32" }}
+              onClick={() => toggleBreakingNews(article)}
+              aria-pressed={Boolean(article.is_breaking)}
+            >{article.is_breaking ? "Remove Breaking" : "Mark Breaking"}</button>
             <button style={styles.button} onClick={() => editArticle(article)}>Edit</button>
             <button style={{ ...styles.button, background: "#c0392b" }} onClick={() => deleteArticle(article.id)}>Delete</button>
           </div>
