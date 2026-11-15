@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://the-daily-brief.onrender.com/sitemap.xml
+Sitemap: https://mcovvpoitrzyfafbicfu.supabase.co/functions/v1/sitemap
