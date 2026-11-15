@@ -180,7 +180,7 @@ const filtered = useMemo(
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
   const normalizedEmail = email.trim().toLowerCase();
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(normalizedEmail)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
     setNewsletterStatus('error');
     setNewsletterMessage('Please enter a valid email address.');
     return;
