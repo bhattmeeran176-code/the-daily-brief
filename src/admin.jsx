@@ -22,6 +22,10 @@ export default function Admin() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [newsletterSubject, setNewsletterSubject] = useState("");
+  const [newsletterBody, setNewsletterBody] = useState("");
+  const [newsletterSending, setNewsletterSending] = useState(false);
+  const [newsletterResult, setNewsletterResult] = useState("");
 
   const loadArticles = useCallback(async () => {
     const { data, error } = await supabase
@@ -237,6 +241,43 @@ export default function Admin() {
     }
     setArticles((previous) => previous.filter((article) => article.id !== id));
     setMessage("Article deleted successfully.");
+  }
+
+  async function sendNewsletter(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setNewsletterResult("Admin authorization is required.");
+      return;
+    }
+    if (!newsletterSubject.trim() || !newsletterBody.trim()) {
+      setNewsletterResult("Enter a subject and newsletter message.");
+      return;
+    }
+    if (!window.confirm("Send this newsletter to all active subscribers? This action cannot be undone.")) return;
+
+    setNewsletterSending(true);
+    setNewsletterResult("Sending newsletter…");
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error("Your admin session has expired. Please log in again.");
+
+      const { data, error } = await supabase.functions.invoke("newsletter-send", {
+        body: { subject: newsletterSubject.trim(), text: newsletterBody.trim() },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setNewsletterResult(`Delivery finished: ${data.sent || 0} sent, ${data.failed || 0} failed, out of ${data.total || 0} active subscribers.`);
+      if ((data.sent || 0) > 0 && (data.failed || 0) === 0) {
+        setNewsletterSubject("");
+        setNewsletterBody("");
+      }
+    } catch (error) {
+      setNewsletterResult(error?.message || "Newsletter could not be sent.");
+    } finally {
+      setNewsletterSending(false);
+    }
   }
 
   async function logout() {
