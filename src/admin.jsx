@@ -26,6 +26,12 @@ export default function Admin() {
   const [newsletterBody, setNewsletterBody] = useState("");
   const [newsletterSending, setNewsletterSending] = useState(false);
   const [newsletterResult, setNewsletterResult] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
 
   const loadArticles = useCallback(async () => {
     const { data, error } = await supabase
@@ -55,6 +61,9 @@ export default function Admin() {
         return;
       }
       setUser(currentUser);
+      setProfileName(currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "");
+      setProfileAvatarUrl(currentUser.user_metadata?.avatar_url || "");
+      setProfileEmail(currentUser.email || "");
       setAuthLoading(false);
     }
     verifyAdmin();
@@ -70,6 +79,9 @@ export default function Admin() {
         return;
       }
       setUser(currentUser);
+      setProfileName(currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || "");
+      setProfileAvatarUrl(currentUser.user_metadata?.avatar_url || "");
+      setProfileEmail(currentUser.email || "");
     });
     return () => {
       active = false;
@@ -281,6 +293,39 @@ export default function Admin() {
   }
 
 
+  async function saveProfile(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setProfileMessage("Admin authorization is required.");
+      return;
+    }
+    setProfileSaving(true);
+    setProfileMessage("");
+    try {
+      const metadata = {
+        ...user.user_metadata,
+        full_name: profileName.trim(),
+        avatar_url: profileAvatarUrl.trim(),
+      };
+      const { data, error } = await supabase.auth.updateUser({ data: metadata });
+      if (error) throw error;
+      let notices = ["Profile details saved."];
+      if (newPassword) {
+        if (newPassword.length < 8) throw new Error("Password must be at least 8 characters.");
+        const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+        if (passwordError) throw passwordError;
+        notices.push("Password updated.");
+        setNewPassword("");
+      }
+      if (data?.user) setUser(data.user);
+      setProfileMessage(notices.join(" "));
+    } catch (error) {
+      setProfileMessage(error?.message || "Profile could not be updated.");
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
   async function logout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -315,6 +360,25 @@ export default function Admin() {
         <p>Total Articles: {articles.length}</p>
         <p>Published: {articles.filter((article) => normalizeArticleStatus(article.status) === "published").length}</p>
       </header>
+
+      <section style={styles.card}>
+        <h2>My Profile</h2>
+        <p>Update the name and profile picture shown with your admin account, or change your password.</p>
+        <form onSubmit={saveProfile}>
+          <label htmlFor="profile-name">Profile Name</label>
+          <input id="profile-name" style={styles.input} value={profileName} onChange={(event) => setProfileName(event.target.value)} maxLength={100} placeholder="Your display name" />
+          <label htmlFor="profile-avatar">Profile Picture URL</label>
+          <input id="profile-avatar" style={styles.input} type="url" value={profileAvatarUrl} onChange={(event) => setProfileAvatarUrl(event.target.value)} placeholder="https://example.com/profile.jpg" />
+          {profileAvatarUrl && <img src={profileAvatarUrl} alt="Profile preview" referrerPolicy="no-referrer" style={{ width: 76, height: 76, objectFit: "cover", borderRadius: "50%", display: "block", marginBottom: 16 }} onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+          <label htmlFor="profile-email">Admin Email</label>
+          <input id="profile-email" style={styles.input} type="email" value={profileEmail || user.email || ""} readOnly />
+          <small style={{ display: "block", color: "#687386", marginTop: -10, marginBottom: 16 }}>The admin email is fixed in the site's access allowlist, so change it only after updating the site's admin authorization settings.</small>
+          <label htmlFor="profile-password">New Password (optional)</label>
+          <input id="profile-password" style={styles.input} type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} autoComplete="new-password" placeholder="Leave blank to keep current password" />
+          <button style={styles.button} type="submit" disabled={profileSaving}>{profileSaving ? "Saving profile…" : "Save Profile"}</button>
+        </form>
+        {profileMessage && <p role="status" aria-live="polite">{profileMessage}</p>}
+      </section>
 
       <section style={styles.card}>
         <h2>{editingId ? "Edit Article" : "Create New Article"}</h2>
