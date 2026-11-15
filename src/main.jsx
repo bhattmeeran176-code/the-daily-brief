@@ -25,25 +25,40 @@ function ContactPage() {
     message: ""
   });
   const [status, setStatus] = useState("");
+  const [sending, setSending] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (sending) return;
+
+    const cleanForm = {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      subject: form.subject.trim(),
+      message: form.message.trim()
+    };
+
+    if (!cleanForm.name || !cleanForm.email || !cleanForm.subject || !cleanForm.message) {
+      setStatus("Please complete all fields before sending.");
+      return;
+    }
+
+    setSending(true);
     setStatus("Sending...");
 
-    const { error } = await supabase
-      .from("contact_messages")
-      .insert([form]);
+    try {
+      const { error } = await supabase
+        .from("contact_messages")
+        .insert([cleanForm]);
 
-    if (error) {
-      setStatus("Message could not be sent. Please try again.");
-    } else {
+      if (error) throw error;
+
       setStatus("Message sent successfully!");
-      setForm({
-        name: "",
-        email: "",
-        subject: "",
-        message: ""
-      });
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch {
+      setStatus("Message could not be sent. Please try again.");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -56,38 +71,42 @@ function ContactPage() {
       <form onSubmit={handleSubmit}>
         {["name", "email", "subject"].map((field) => (
           <div key={field} style={{ marginBottom: "18px" }}>
-            <label>{field.toUpperCase()}</label>
+            <label htmlFor={`contact-${field}`}>{field.toUpperCase()}</label>
             <input
+              id={`contact-${field}`}
+              name={field}
               required
+              maxLength={field === "subject" ? 160 : field === "name" ? 100 : 254}
+              autoComplete={field === "name" ? "name" : field === "email" ? "email" : "off"}
               type={field === "email" ? "email" : "text"}
               value={form[field]}
-              onChange={(e) =>
-                setForm({ ...form, [field]: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, [field]: e.target.value })}
               style={{ display: "block", width: "100%", padding: "12px", boxSizing: "border-box" }}
             />
           </div>
         ))}
 
-        <label>MESSAGE</label>
+        <label htmlFor="contact-message">MESSAGE</label>
         <textarea
+          id="contact-message"
+          name="message"
           required
+          maxLength={5000}
           rows="6"
           value={form.message}
-          onChange={(e) =>
-            setForm({ ...form, message: e.target.value })
-          }
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
           style={{ display: "block", width: "100%", padding: "12px", boxSizing: "border-box" }}
         />
 
-        <button type="submit">Send Message</button>
+        <button type="submit" disabled={sending}>
+          {sending ? "Sending..." : "Send Message"}
+        </button>
       </form>
 
-      <p>{status}</p>
+      <p role="status" aria-live="polite">{status}</p>
     </main>
   );
 }
-
 function PrivacyPage() {
   return (
     <main style={{
@@ -147,12 +166,15 @@ function PrivacyPage() {
         a newsletter subscription.
       </p>
 
-      <h2>6. Cookies and Analytics</h2>
+      <h2>6. Cookies and Google Analytics</h2>
       <p>
-        Some website features or third-party services may use cookies or
-        similar technologies. If analytics tools are enabled, they may collect
-        usage information such as pages visited and general device or browser
-        details. Check your browser settings to manage cookies.
+        This website currently uses Google Analytics to understand how visitors
+        use the site. Google Analytics may collect information such as pages
+        viewed, approximate location, browser and device details, and interaction
+        data. Google may use cookies or similar technologies to provide this
+        service. You can manage cookies through your browser settings. For more
+        information about how Google handles data, please review Google's
+        privacy information.
       </p>
 
       <h2>7. Policy Updates</h2>
