@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   });
   const { data, error } = await supabase
     .from("articles")
-    .select("title, created_at, updated_at")
+    .select("slug, title, created_at, updated_at")
     .eq("status", "Published")
     .order("created_at", { ascending: false })
     .limit(5000);
@@ -42,9 +42,9 @@ Deno.serve(async (req) => {
     `<url><loc>${SITE}${path}</loc><changefreq>${frequency}</changefreq><priority>${priority}</priority></url>`
   );
   const articleEntries = (data || [])
-    .filter((article) => typeof article.title === "string" && article.title.trim())
     .map((article) => {
-      const slug = slugify(article.title);
+      // Match the frontend route resolver: prefer the stored slug, then fall back to the title.
+      const slug = slugify(article.slug || article.title || "");
       if (!slug) return "";
       const modified = article.updated_at || article.created_at;
       const lastmod = modified ? `<lastmod>${xmlEscape(new Date(modified).toISOString())}</lastmod>` : "";
