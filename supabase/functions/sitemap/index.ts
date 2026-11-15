@@ -18,14 +18,17 @@ const staticPaths = [
 
 Deno.serve(async (req) => {
   if (req.method !== "GET" && req.method !== "HEAD") {
-    return new Response("Method not allowed", { status: 405, headers: { Allow: "GET, HEAD" } });
+    return new Response("Method not allowed", {
+      status: 405,
+      headers: { Allow: "GET, HEAD" },
+    });
   }
 
   const staticEntries = staticPaths.map(({ path, priority, frequency }) =>
     `<url><loc>${SITE}${path}</loc><changefreq>${frequency}</changefreq><priority>${priority}</priority></url>`
   );
 
-  let articles: Array<{ slug: string | null; title: string; created_at: string | null; updated_at?: string | null }> = [];
+  let articles: Array<{ title: string; created_at: string | null }> = [];
   let articleQueryStatus = "not-configured";
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -37,48 +40,31 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const primary = await supabase
+    // The articles table has no slug or updated_at column. The site itself
+    // builds article URLs from the title, so mirror that behavior here.
+    const result = await supabase
       .from("articles")
-      .select("slug, title, created_at, updated_at")
+      .select("title, created_at")
       .ilike("status", "published")
       .order("created_at", { ascending: false })
       .limit(5000);
 
-    if (!primary.error) {
-      articleQueryStatus = "success";
-      articles = primary.data || [];
+    if (result.error) {
+      articleQueryStatus = "error";
+      console.error("Sitemap article query failed:", result.error.message);
     } else {
-      articleQueryStatus = "fallback";
-      console.error("Sitemap article query with updated_at failed:", primary.error.message);
-
-      // Older article schemas may not contain updated_at. Retry without that optional column.
-      const fallback = await supabase
-        .from("articles")
-        .select("slug, title, created_at")
-        .eq("status", "Published")
-        .order("created_at", { ascending: false })
-        .limit(5000);
-
-      if (!fallback.error) {
-        articleQueryStatus = "success-fallback";
-        articles = (fallback.data || []).map((article) => ({ ...article, updated_at: null }));
-      } else {
-        // Keep the sitemap endpoint healthy even if the article table or public read policy
-        // is temporarily unavailable. Static pages remain discoverable.
-        articleQueryStatus = "error";
-        console.error("Sitemap fallback article query failed:", fallback.error.message);
-      }
+      articleQueryStatus = "success";
+      articles = result.data || [];
     }
   }
 
   const articleEntries = articles
     .filter((article) => typeof article.title === "string" && article.title.trim())
     .map((article) => {
-      const slug = slugify(article.slug || article.title);
+      const slug = slugify(article.title);
       if (!slug) return "";
-      const modified = article.updated_at || article.created_at;
-      const lastmod = modified && !Number.isNaN(Date.parse(modified))
-        ? `<lastmod>${xmlEscape(new Date(modified).toISOString())}</lastmod>`
+      const lastmod = article.created_at && !Number.isNaN(Date.parse(article.created_at))
+        ? `<lastmod>${xmlEscape(new Date(article.created_at).toISOString())}</lastmod>`
         : "";
       return `<url><loc>${SITE}/article/${encodeURIComponent(slug)}</loc>${lastmod}<changefreq>monthly</changefreq><priority>0.7</priority></url>`;
     })
