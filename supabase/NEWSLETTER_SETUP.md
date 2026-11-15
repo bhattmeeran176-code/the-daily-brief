@@ -20,9 +20,14 @@ The public signup form stores addresses in `newsletter_subscribers`. This setup 
 ## Deploy
 
 ```sh
+supabase functions deploy sitemap --no-verify-jwt
 supabase functions deploy newsletter-unsubscribe --no-verify-jwt
 supabase functions deploy newsletter-send --no-verify-jwt
 ```
+
+### Activate the dynamic sitemap
+
+After deploying `sitemap`, open `https://mcovvpoitrzyfafbicfu.supabase.co/functions/v1/sitemap` and confirm it returns valid XML containing the static pages and your published article URLs. Only after that check succeeds, update `public/robots.txt` so its `Sitemap:` line points to `https://mcovvpoitrzyfafbicfu.supabase.co/functions/v1/sitemap`, then merge and deploy that small website change. Until then, keep the existing Render sitemap URL in `robots.txt`.
 
 Both functions perform their own checks. The send function requires the `x-newsletter-admin-secret` header. The unsubscribe function accepts only a random per-subscriber UUID token and never exposes the subscriber list.
 

@@ -79,13 +79,13 @@ Deno.serve(async (req) => {
       });
       if (!response.ok) {
         failed++;
-        failures.push(`${subscriber.email}: provider rejected the message (HTTP ${response.status})`);
+        failures.push(`A message was rejected by the email provider (HTTP ${response.status}).`);
       } else {
         sent++;
       }
     } catch {
       failed++;
-      failures.push(`${subscriber.email}: delivery request failed`);
+      failures.push("A delivery request failed before confirmation.");
     }
   }
 
