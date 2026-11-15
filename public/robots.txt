@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
 
-# Keep using the live static sitemap until the Supabase sitemap function is deployed.
+# Static sitemap fallback
 Sitemap: https://the-daily-brief.onrender.com/sitemap.xml
+
+# Dynamic sitemap generated from published Supabase articles
+Sitemap: https://mcovvpoitrzyfafbicfu.supabase.co/functions/v1/sitemap
