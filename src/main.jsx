@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail} from 'lucide-react';
+import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check} from 'lucide-react';
 import './styles.css';
 import AdminLogin from './AdminLogin.jsx';
 import PasswordReset from './PasswordReset.jsx';
@@ -188,6 +188,8 @@ function App(){
  const [publishedArticles, setPublishedArticles] = useState([]);
  const [siteBranding, setSiteBranding] = useState({ headerLogo: "", footerLogo: "", favicon: "" });
  const [publishedArticlesError, setPublishedArticlesError] = useState('');
+ const [readingProgress, setReadingProgress] = useState(0);
+ const [shareCopied, setShareCopied] = useState(false);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const allStories = [
   ...publishedArticles.map((article, index) => ({
@@ -325,6 +327,25 @@ useEffect(() => {
 }, [publishedArticles]);
  
 useEffect(() => {
+  if (!selected) {
+    setReadingProgress(0);
+    return;
+  }
+  const updateProgress = () => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 100;
+    setReadingProgress(Math.min(100, Math.max(0, progress)));
+  };
+  updateProgress();
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  window.addEventListener("resize", updateProgress);
+  return () => {
+    window.removeEventListener("scroll", updateProgress);
+    window.removeEventListener("resize", updateProgress);
+  };
+}, [selected]);
+
+useEffect(() => {
 if (!selected) {
   document.title = "The Daily Brief | Global News, Clearly Told";
 
@@ -410,71 +431,87 @@ url: window.location.origin
 }, [selected]);
  
 if (selected) {
+  const articleUrl = window.location.origin + `/article/${slugify(selected.slug || selected.title)}`;
+  const articleText = selected.content || selected.excerpt || selected.description || "";
+  const wordCount = articleText.trim() ? articleText.trim().split(/\\s+/).length : 0;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 220));
+  const relatedStories = publishedArticles
+    .filter((story) => story.id !== selected.id && story.title !== selected.title)
+    .filter((story) => (story.category || "").toLowerCase() === (selected.category || "").toLowerCase())
+    .slice(0, 3);
+  const shareTitle = encodeURIComponent(selected.title || "The Daily Brief");
+  const shareUrl = encodeURIComponent(articleUrl);
+  const copyArticleLink = async () => {
+    try {
+      await navigator.clipboard.writeText(articleUrl);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2200);
+    } catch {
+      setShareCopied(false);
+      window.prompt("Copy this article link:", articleUrl);
+    }
+  };
+
   return (
-    <article style={{
-      maxWidth: "850px",
-      margin: "40px auto",
-      padding: "24px",
-      color: "#252525",
-      background: "#fff",
-      fontFamily: "Georgia, serif"
-    }}>
-      <button
-        onClick={() => {
-  setSelected(null);
-  window.history.pushState({}, "", "/");
-}}
-        style={{
-          padding: "10px 16px",
-          border: "1px solid #ddd",
-          background: "#f7f7f4",
-          cursor: "pointer",
-          marginBottom: "28px"
-        }}
-      >
-        ← Back to Home
-      </button>
-
-      <p style={{
-        color: "#9b654d",
-        textTransform: "uppercase",
-        letterSpacing: "2px",
-        fontSize: "12px"
-      }}>
-        {selected.category || selected.tag}
-      </p>
-
-      <h1 style={{
-        fontSize: "clamp(30px, 5vw, 48px)",
-        lineHeight: "1.15",
-        margin: "16px 0 24px"
-      }}>
-        {selected.title}
-      </h1>
-
-      {(selected.image || selected.image_url) && (
-        <img
-          src={selected.image || selected.image_url}
-          alt={selected.title}
-          style={{
-            width: "100%",
-            maxHeight: "480px",
-            objectFit: "cover",
-            marginBottom: "28px"
-          }}
-        />
-      )}
-
-      <div style={{
-        fontFamily: "Arial, sans-serif",
-        fontSize: "17px",
-        lineHeight: "1.9",
-        whiteSpace: "pre-wrap",
-        overflowWrap: "anywhere"
-      }}>
-        {selected.content || selected.excerpt || selected.description}
+    <>
+      <div className="reading-progress-track" aria-hidden="true">
+        <div className="reading-progress-fill" style={{ width: `${readingProgress}%` }} />
       </div>
-    </article>
+      <article className="article-page">
+        <button className="back" onClick={() => {
+          setSelected(null);
+          window.history.pushState({}, "", "/");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}>← Back to Home</button>
+
+        <p className="article-kicker">{selected.category || selected.tag || "THE DAILY BRIEF"}</p>
+        <h1>{selected.title}</h1>
+        <div className="article-meta-row">
+          <span><Clock3 size={15} /> {readingMinutes} min read</span>
+          {selected.author && <span>By {selected.author}</span>}
+          {(selected.published_at || selected.created_at) && <span>{new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(selected.published_at || selected.created_at))}</span>}
+        </div>
+
+        {(selected.image || selected.image_url) && (
+          <img className="article-hero" src={selected.image || selected.image_url} alt={selected.title} />
+        )}
+
+        <div className="article-body">{articleText}</div>
+
+        <section className="article-share" aria-label="Share this article">
+          <div>
+            <span className="article-section-label">PASS THE STORY ON</span>
+            <h2>Share this article</h2>
+          </div>
+          <div className="share-actions">
+            <a href={`https://wa.me/?text=${shareTitle}%20${shareUrl}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noopener noreferrer">Facebook</a>
+            <a href={`https://twitter.com/intent/tweet?text=${shareTitle}&url=${shareUrl}`} target="_blank" rel="noopener noreferrer">X</a>
+            <button type="button" onClick={copyArticleLink}>{shareCopied ? <Check size={15} /> : <Copy size={15} />}{shareCopied ? "Copied" : "Copy link"}</button>
+          </div>
+        </section>
+
+        {relatedStories.length > 0 && (
+          <section className="related-stories">
+            <div className="article-section-label">CONTINUE READING</div>
+            <h2>Related stories</h2>
+            <div className="related-grid">
+              {relatedStories.map((story) => (
+                <button className="related-card" type="button" key={story.id} onClick={() => {
+                  setSelected(story);
+                  window.history.pushState({}, "", `/article/${slugify(story.slug || story.title)}`);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}>
+                  {(story.image_url || story.image) && <img src={story.image_url || story.image} alt="" />}
+                  <span>{story.category || "THE DAILY BRIEF"}</span>
+                  <strong>{story.title}</strong>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+      </article>
+    </>
   );
 }
 if (window.location.pathname === "/about") {
