@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
   );
 
   let articles: Array<{ slug: string | null; title: string; created_at: string | null; updated_at?: string | null }> = [];
+  let articleQueryStatus = "not-configured";
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
 
@@ -39,13 +40,15 @@ Deno.serve(async (req) => {
     const primary = await supabase
       .from("articles")
       .select("slug, title, created_at, updated_at")
-      .eq("status", "Published")
+      .ilike("status", "published")
       .order("created_at", { ascending: false })
       .limit(5000);
 
     if (!primary.error) {
+      articleQueryStatus = "success";
       articles = primary.data || [];
     } else {
+      articleQueryStatus = "fallback";
       console.error("Sitemap article query with updated_at failed:", primary.error.message);
 
       // Older article schemas may not contain updated_at. Retry without that optional column.
@@ -57,10 +60,12 @@ Deno.serve(async (req) => {
         .limit(5000);
 
       if (!fallback.error) {
+        articleQueryStatus = "success-fallback";
         articles = (fallback.data || []).map((article) => ({ ...article, updated_at: null }));
       } else {
         // Keep the sitemap endpoint healthy even if the article table or public read policy
         // is temporarily unavailable. Static pages remain discoverable.
+        articleQueryStatus = "error";
         console.error("Sitemap fallback article query failed:", fallback.error.message);
       }
     }
@@ -90,6 +95,8 @@ Deno.serve(async (req) => {
       "content-type": "application/xml; charset=utf-8",
       "cache-control": "public, max-age=300",
       "x-content-type-options": "nosniff",
+      "x-sitemap-article-count": String(articleEntries.length),
+      "x-sitemap-article-query": articleQueryStatus,
     },
   });
 });
