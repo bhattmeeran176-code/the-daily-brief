@@ -496,7 +496,7 @@ if (window.location.pathname === "/about") {
   );
 }
           return <div className="site">
-  <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>Saturday, November 7, 2026</span></div>
+  <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>{new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())}</span></div>
   <header className="header">
    <button className="icon-btn mobile-menu" onClick={()=>setMenu(!menu)} aria-label="Open menu">{menu?<X/>:<Menu/>}</button>
    <a className="brand" href="#" onClick={e=>{e.preventDefault();setSelected(null)}}><span className="brand-mark">DB</span><span>THE DAILY <b>BRIEF</b><small>GLOBAL NEWS, CLEARLY TOLD</small></span></a>
