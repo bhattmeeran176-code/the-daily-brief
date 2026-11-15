@@ -23,6 +23,10 @@ export default function Admin() {
   const [message, setMessage] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [newsletterSubject, setNewsletterSubject] = useState("");
+  const [newsletterText, setNewsletterText] = useState("");
+  const [newsletterSending, setNewsletterSending] = useState(false);
+  const [newsletterResult, setNewsletterResult] = useState("");
+  const [newsletterSubject, setNewsletterSubject] = useState("");
   const [newsletterBody, setNewsletterBody] = useState("");
   const [newsletterSending, setNewsletterSending] = useState(false);
   const [newsletterResult, setNewsletterResult] = useState("");
@@ -280,6 +284,35 @@ export default function Admin() {
     }
   }
 
+  async function sendNewsletter(event) {
+    event.preventDefault();
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL || newsletterSending) return;
+    if (!newsletterSubject.trim() || !newsletterText.trim()) {
+      setNewsletterResult("Enter both a subject and message before sending.");
+      return;
+    }
+    if (!window.confirm("Send this newsletter to every active subscriber? This action cannot be undone.")) return;
+
+    setNewsletterSending(true);
+    setNewsletterResult("Sending newsletter…");
+    try {
+      const { data, error } = await supabase.functions.invoke("newsletter-send", {
+        body: { subject: newsletterSubject.trim(), text: newsletterText.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setNewsletterResult(`Delivery finished: ${data?.sent ?? 0} sent, ${data?.failed ?? 0} failed, ${data?.total ?? 0} active subscribers.`);
+      if ((data?.sent ?? 0) > 0 && (data?.failed ?? 0) === 0) {
+        setNewsletterSubject("");
+        setNewsletterText("");
+      }
+    } catch (error) {
+      setNewsletterResult("Newsletter could not be sent: " + (error?.message || "Check Edge Function deployment and secrets."));
+    } finally {
+      setNewsletterSending(false);
+    }
+  }
+
   async function logout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -345,6 +378,19 @@ export default function Admin() {
           <label htmlFor="newsletter-body">Message</label>
           <textarea id="newsletter-body" style={{ ...styles.input, minHeight: "180px" }} value={newsletterBody} onChange={(event) => setNewsletterBody(event.target.value)} required placeholder="Write the newsletter message…" />
           <button style={styles.button} type="submit" disabled={newsletterSending}>{newsletterSending ? "Sending…" : "Send to Subscribers"}</button>
+        </form>
+        {newsletterResult && <p role="status" aria-live="polite">{newsletterResult}</p>}
+      </section>
+
+      <section style={styles.card}>
+        <h2>Send Newsletter</h2>
+        <p>Send a plain-text update to all active newsletter subscribers. Confirm the recipient count before sending.</p>
+        <form onSubmit={sendNewsletter}>
+          <label htmlFor="newsletter-subject">Email Subject</label>
+          <input id="newsletter-subject" style={styles.input} maxLength={180} value={newsletterSubject} onChange={(event) => setNewsletterSubject(event.target.value)} placeholder="Enter newsletter subject" required />
+          <label htmlFor="newsletter-message">Newsletter Message</label>
+          <textarea id="newsletter-message" style={{ ...styles.input, minHeight: "180px" }} maxLength={20000} value={newsletterText} onChange={(event) => setNewsletterText(event.target.value)} placeholder="Write your newsletter update…" required />
+          <button style={styles.button} type="submit" disabled={newsletterSending}>{newsletterSending ? "Sending…" : "Send to Active Subscribers"}</button>
         </form>
         {newsletterResult && <p role="status" aria-live="polite">{newsletterResult}</p>}
       </section>
