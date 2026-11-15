@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
+# Keep using the live static sitemap until the Supabase sitemap function is deployed.
 Sitemap: https://the-daily-brief.onrender.com/sitemap.xml

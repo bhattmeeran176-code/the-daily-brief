@@ -101,55 +101,71 @@ function PrivacyPage() {
     }}>
       <a href="/">← Back to Home</a>
       <h1>Privacy Policy</h1>
-      <p>Last updated: November 12, 2026</p>
+      <p>Last updated: November 15, 2026</p>
 
       <p>
-        The Daily Brief respects your privacy. This policy explains
-        how we collect and use information submitted through our website.
+        The Daily Brief respects your privacy. This policy explains what
+        information may be collected when you use our website and how it is used.
       </p>
 
-      <h2>1. Information We Collect</h2>
+      <h2>1. Information You Provide</h2>
       <p>
-        Our Contact Us form may collect your name, email address,
-        subject and message.
+        If you contact us, we may collect your name, email address, subject
+        and message. If you subscribe to our newsletter, we collect your email
+        address so we can manage your subscription and, when newsletter delivery
+        is activated, send the updates you requested.
       </p>
 
       <h2>2. How We Use Information</h2>
       <p>
-        We use submitted information to respond to questions,
-        feedback and enquiries.
+        We use contact details to respond to enquiries and feedback. Newsletter
+        email addresses are used only to manage subscriptions and deliver
+        The Daily Brief updates. You can request to stop receiving newsletters
+        using the unsubscribe link included in a delivered newsletter.
       </p>
 
-      <h2>3. Data Storage</h2>
+      <h2>3. Storage and Service Providers</h2>
       <p>
-        Contact messages are stored using Supabase.
+        Contact messages and newsletter subscription records are stored using
+        Supabase. If newsletter delivery is enabled, an email delivery provider
+        may process recipient addresses to send those messages. These providers
+        process information to provide the relevant website services.
       </p>
 
-      <h2>4. Information Sharing</h2>
+      <h2>4. Sharing and Sale of Information</h2>
       <p>
-        We do not sell personal information. Service providers may
-        process information to operate our website.
+        We do not sell personal information. We do not publish newsletter
+        subscriber email addresses. Information may be processed by service
+        providers as needed to operate the website and its requested features.
       </p>
 
-      <h2>5. Data Retention</h2>
+      <h2>5. Retention and Your Choices</h2>
       <p>
-        We retain messages only as long as reasonably necessary
-        for communication and record keeping.
+        We retain information for as long as reasonably necessary for the
+        purpose for which it was collected, subject to applicable requirements.
+        You may contact us to ask about your information or request help with
+        a newsletter subscription.
       </p>
 
-      <h2>6. Your Privacy</h2>
+      <h2>6. Cookies and Analytics</h2>
       <p>
-        For privacy-related questions, contact us through our
-        Contact Us page.
+        Some website features or third-party services may use cookies or
+        similar technologies. If analytics tools are enabled, they may collect
+        usage information such as pages visited and general device or browser
+        details. Check your browser settings to manage cookies.
       </p>
 
       <h2>7. Policy Updates</h2>
       <p>
-        We may update this policy when our practices change.
+        We may update this policy when our website features or practices change.
+        The date above shows when this page was most recently updated.
       </p>
 
       <h2>8. Contact Us</h2>
-      <p><a href="/contact">Contact The Daily Brief</a></p>
+      <p>
+        For privacy-related questions or requests, use our
+        <a href="/contact"> Contact Us page</a>.
+      </p>
     </main>
   );
 }
