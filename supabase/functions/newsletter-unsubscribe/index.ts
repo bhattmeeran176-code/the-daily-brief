@@ -13,14 +13,9 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   let token = url.searchParams.get("token");
   if (req.method === "POST") {
-    try {
-      const body = await req.json();
-      token = typeof body?.token === "string" ? body.token : token;
-    } catch {
-      return new Response(html("The unsubscribe link is invalid."), {
-        status: 400, headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }
+    // Mail providers use the RFC 8058 one-click POST body. The opaque token
+    // remains in the URL query string, so no subscriber email is exposed.
+    await req.text();
   }
   if (!token || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
     return new Response(html("This unsubscribe link is invalid or incomplete."), {
