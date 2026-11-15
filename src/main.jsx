@@ -196,12 +196,13 @@ function App(){
  const [publishedArticles, setPublishedArticles] = useState([]);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const allStories = [
-  ...publishedArticles.map(article => ({
+  ...publishedArticles.map((article, index) => ({
     ...article,
     tag: article.category,
-    excerpt: article.content,
-   image: article.image_url,
-    featured: false
+    excerpt: (article.content || article.excerpt || article.description || "")
+      .replace(/\\s+/g, " ").slice(0, 180),
+    image: article.image_url || article.image,
+    featured: index === 0
   })),
   ...stories
 ];
@@ -213,7 +214,7 @@ const filtered = useMemo(
   ),
   [active, query, publishedArticles]
 );
- const featured=stories[0];
+ const featured=allStories[0] || stories[0];
 
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
