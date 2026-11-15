@@ -497,7 +497,7 @@ if (window.location.pathname === "/about") {
   <div className="topline"><span><Globe2 size={13}/> INDEPENDENT JOURNALISM · GLOBAL PERSPECTIVES</span><span>{new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())}</span></div>
   <header className="header">
    <button className="icon-btn mobile-menu" onClick={()=>setMenu(!menu)} aria-label="Open menu">{menu?<X/>:<Menu/>}</button>
-   <a className="brand" href="#" onClick={e=>{e.preventDefault();setSelected(null)}}><span className="brand-mark">DB</span><span>THE DAILY <b>BRIEF</b><small>GLOBAL NEWS, CLEARLY TOLD</small></span></a>
+   <a className="brand" href="/" aria-label="The Daily Brief home" onClick={e=>{e.preventDefault();setSelected(null);window.history.pushState({}, "", "/");window.scrollTo({top:0,behavior:"smooth"});}}><img className="brand-logo" src="/daily-brief-logo.svg" alt="The Daily Brief — Kashmir, India, World, Explained" /></a>
    <nav className={menu?'nav open':'nav'}>{categories.slice(1).map(c=><button key={c} onClick={()=>{setActive(c);setSelected(null);setMenu(false)}}>{c}</button>)}</nav>
    <div className="header-actions"><label className="searchbox"><Search size={16}/><input placeholder="Search stories" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null)}}/></label><button className="subscribe-btn" onClick={()=>document.getElementById('newsletter').scrollIntoView({behavior:'smooth'})}>Subscribe <ArrowUpRight size={15}/></button></div>
   </header>
@@ -513,7 +513,7 @@ if (window.location.pathname === "/about") {
    </section>
    <section className="newsletter" id="newsletter"><div><div className="eyebrow">THE DAILY BRIEFING</div><h2>A sharper view<br/><i>of the day.</i></h2><p>A considered digest of the stories shaping our world.</p></div><form onSubmit={handleNewsletterSubmit}><label htmlFor="email">GET THE NEWSLETTER</label><div className="email-row"><input id="email" type="email" required maxLength="254" autoComplete="email" placeholder="Your email address" value={email} onChange={e=>{setEmail(e.target.value);if(newsletterStatus!=='idle'){setNewsletterStatus('idle');setNewsletterMessage('');}}} disabled={newsletterStatus==='submitting'}/><button type="submit" disabled={newsletterStatus==='submitting'}>{newsletterStatus==='submitting'?'Saving…':newsletterStatus==='success'?'Subscribed':'Sign me up'} <ArrowUpRight size={16}/></button></div><small role="status" aria-live="polite">{newsletterMessage || 'No noise. Just the stories worth your time.'}</small><small>By subscribing, you agree to receive email updates from The Daily Brief.</small></form></section>
   </main>
-  <footer><a className="brand footer-brand" href="#" onClick={e=>{e.preventDefault();setSelected(null)}}><span className="brand-mark">DB</span><span>THE DAILY <b>BRIEF</b><small>GLOBAL NEWS, CLEARLY TOLD</small></span></a><p>Independent journalism. Clear perspectives.</p><span>© 2026 The Daily Brief</span><a href="/about">About Us</a><a href="/contact">Contact Us</a><a href="/privacy-policy">Privacy Policy</a></footer>
+  <footer><a className="brand footer-brand" href="/" aria-label="The Daily Brief home"><img className="brand-logo" src="/daily-brief-logo.svg" alt="The Daily Brief" /></a><p>Independent journalism. Clear perspectives.</p><span>© 2026 The Daily Brief</span><a href="/about">About Us</a><a href="/contact">Contact Us</a><a href="/privacy-policy">Privacy Policy</a></footer>
  </div>
 }
 
