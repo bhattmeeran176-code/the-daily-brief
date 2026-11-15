@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
   let failed = 0;
   const failures: string[] = [];
   for (const subscriber of subscribers) {
-    const unsubscribeUrl = `${supabaseUrl.replace(/\\/$/, "")}/functions/v1/newsletter-unsubscribe?token=${encodeURIComponent(subscriber.unsubscribe_token)}`;
-    const emailText = `${textContent}\\n\\n---\\nYou received this email because you subscribed to The Daily Brief.\\nUnsubscribe: ${unsubscribeUrl}`;
+    const unsubscribeUrl = `${supabaseUrl}/functions/v1/newsletter-unsubscribe?token=${encodeURIComponent(subscriber.unsubscribe_token)}`;
+    const emailText = [textContent, "---", "You received this email because you subscribed to The Daily Brief.", `Unsubscribe: ${unsubscribeUrl}`].join(String.fromCharCode(10));
     try {
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
