@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check, Bookmark, Moon, Sun, Eye, Printer, ArrowUp, Minus, Plus, Maximize2, Minimize2} from 'lucide-react';
+import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check, Bookmark, Moon, Sun, Eye, Printer, ArrowUp, Minus, Plus, Maximize2, Minimize2, Volume2, Play, Pause, Square} from 'lucide-react';
 import './styles.css';
 import AdminLogin from './AdminLogin.jsx';
 import PasswordReset from './PasswordReset.jsx';
@@ -192,6 +192,9 @@ function App(){
  const [shareCopied, setShareCopied] = useState(false);
  const [articleFontSize, setArticleFontSize] = useState(()=>{try{return Math.min(24,Math.max(16,Number(localStorage.getItem('tdb-article-font-size'))||19));}catch{return 19;}});
  const [focusReading, setFocusReading] = useState(false);
+ const [speechLanguage, setSpeechLanguage] = useState('en-IN');
+ const [speechRate, setSpeechRate] = useState(1);
+ const [speechStatus, setSpeechStatus] = useState('idle');
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem('tdb-theme')==='dark';}catch{return false;}});
  const [savedIds,setSavedIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('tdb-saved-articles')||'[]');}catch{return [];}});
@@ -235,6 +238,7 @@ const filtered = useMemo(
  useEffect(()=>{try{localStorage.setItem('tdb-reading-history',JSON.stringify(readingHistory));}catch{}},[readingHistory]);
  useEffect(()=>{const syncRoute=()=>{const match=window.location.pathname.match(/^\/author\/([^/]+)\/?$/);setAuthorProfileSlug(match?decodeURIComponent(match[1]):'');};window.addEventListener('popstate',syncRoute);return()=>window.removeEventListener('popstate',syncRoute);},[]);
  useEffect(()=>{if(!selected?.id)return;setReadingHistory(previous=>[String(selected.id),...previous.filter(id=>String(id)!==String(selected.id))].slice(0,12));},[selected?.id]);
+ useEffect(()=>{if('speechSynthesis' in window){window.speechSynthesis.cancel();setSpeechStatus('idle');}return()=>{if('speechSynthesis' in window)window.speechSynthesis.cancel();};},[selected?.id]);
  useEffect(()=>{try{localStorage.setItem('tdb-article-font-size',String(articleFontSize));}catch{}},[articleFontSize]);
  useEffect(()=>{if(!selected?.id)return;const viewKey='tdb-viewed-'+selected.id;try{if(sessionStorage.getItem(viewKey))return;sessionStorage.setItem(viewKey,'1');}catch{}let active=true;supabase.rpc('increment_article_view',{article_id:String(selected.id)}).then(({data,error})=>{if(!active||error){if(error)console.error('Article view count update failed:',error.message);return;}const count=Number(data||0);setPublishedArticles(previous=>previous.map(article=>String(article.id)===String(selected.id)?{...article,views_count:count}:article));setSelected(previous=>previous&&String(previous.id)===String(selected.id)?{...previous,views_count:count}:previous);});return()=>{active=false;};},[selected?.id]);
  const handleNewsletterSubmit = async (event) => {
@@ -483,6 +487,43 @@ if (selected) {
         <div className="reading-progress-fill" style={{ width: `${readingProgress}%` }} />
       </div>
       <article className={`article-page${focusReading?' focus-reading':''}`}>
+        <section className="article-audio-reader" aria-label="Listen to this article">
+          <div className="article-audio-heading"><Volume2 size={19}/><div><strong>Listen to this article</strong><span>Text-to-speech audio reader</span></div></div>
+          <div className="article-audio-controls">
+            <button type="button" className="article-audio-play" onClick={()=>{
+              if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) { setSpeechStatus('unsupported'); return; }
+              if (speechStatus === 'speaking') { window.speechSynthesis.pause(); setSpeechStatus('paused'); return; }
+              if (speechStatus === 'paused') { window.speechSynthesis.resume(); setSpeechStatus('speaking'); return; }
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance((selected.title || "") + ". " + articleText);
+              utterance.lang = speechLanguage;
+              utterance.rate = speechRate;
+              const voices = window.speechSynthesis.getVoices();
+              const matchingVoice = voices.find(voice => voice.lang?.toLowerCase() === speechLanguage.toLowerCase()) || voices.find(voice => voice.lang?.toLowerCase().startsWith(speechLanguage.slice(0,2).toLowerCase()));
+              if (matchingVoice) utterance.voice = matchingVoice;
+              utterance.onstart = () => setSpeechStatus('speaking');
+              utterance.onend = () => setSpeechStatus('idle');
+              utterance.onerror = () => setSpeechStatus('idle');
+              setSpeechStatus('speaking');
+              window.speechSynthesis.speak(utterance);
+            }} aria-label={speechStatus === "speaking" ? "Pause article audio" : speechStatus === "paused" ? "Resume article audio" : "Play article audio"}>
+              {speechStatus === "speaking" ? <Pause size={18}/> : <Play size={18}/>}
+              {speechStatus === "speaking" ? "Pause" : speechStatus === "paused" ? "Resume" : "Listen"}
+            </button>
+            <label className="article-audio-select">Voice language
+              <select value={speechLanguage} onChange={event=>{window.speechSynthesis?.cancel();setSpeechStatus("idle");setSpeechLanguage(event.target.value);}}>
+                <option value="en-IN">English</option><option value="hi-IN">Hindi</option>
+              </select>
+            </label>
+            <label className="article-audio-select">Speed
+              <select value={speechRate} onChange={event=>setSpeechRate(Number(event.target.value))}>
+                <option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option>
+              </select>
+            </label>
+            <button type="button" className="article-audio-stop" onClick={()=>{window.speechSynthesis?.cancel();setSpeechStatus("idle");}} disabled={speechStatus==="idle"}><Square size={14}/> Stop</button>
+          </div>
+          {speechStatus === "unsupported" ? <p className="article-audio-note" role="status">Audio reading is not supported by this browser. Try an updated version of Chrome.</p> : <p className="article-audio-note" role="status">{speechStatus === "speaking" ? "Reading this article aloud…" : speechStatus === "paused" ? "Audio paused." : "Uses voices available on your device or browser. Voice options may vary."}</p>}
+        </section>
         <div className="article-tools" role="toolbar" aria-label="Article reading tools">
           <div className="font-size-tools" aria-label="Article text size">
             <span>TEXT SIZE</span>
