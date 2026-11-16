@@ -16,6 +16,9 @@ export default function Admin() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("World");
   const [content, setContent] = useState("");
+  const [author, setAuthor] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [correctionNote, setCorrectionNote] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -172,6 +175,9 @@ export default function Admin() {
         category,
         image_url: finalImageUrl,
         content: content.trim(),
+        author: author.trim(),
+        source_url: sourceUrl.trim(),
+        correction_note: correctionNote.trim(),
       };
 
       const result = editingId
@@ -187,6 +193,9 @@ export default function Admin() {
       setTitle("");
       setCategory("World");
       setContent("");
+      setAuthor("");
+      setSourceUrl("");
+      setCorrectionNote("");
       setImageUrl("");
       setImageFile(null);
       setEditingId(null);
@@ -275,6 +284,9 @@ export default function Admin() {
     setTitle(article.title || "");
     setCategory(article.category || "World");
     setContent(article.content || "");
+    setAuthor(article.author || "");
+    setSourceUrl(article.source_url || "");
+    setCorrectionNote(article.correction_note || "");
     setImageUrl(article.image_url || "");
     setImageFile(null);
     setEditingId(article.id);
@@ -544,6 +556,12 @@ export default function Admin() {
           <select id="article-category" style={styles.input} value={category} onChange={(event) => setCategory(event.target.value)}>
             <option>World</option><option>India</option><option>Jammu &amp; Kashmir</option><option>Technology</option><option>Business</option><option>Science</option><option>Culture</option>
           </select>
+          <label htmlFor="article-author">Author / Byline</label>
+          <input id="article-author" style={styles.input} type="text" value={author} onChange={(event) => setAuthor(event.target.value)} maxLength={120} placeholder="e.g. The Daily Brief News Desk" />
+          <label htmlFor="article-source-url">Original Source URL (optional)</label>
+          <input id="article-source-url" style={styles.input} type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={1000} placeholder="https://example.com/source-report" />
+          <label htmlFor="article-correction-note">Correction / Update Note (optional)</label>
+          <textarea id="article-correction-note" style={{ ...styles.input, minHeight: "75px" }} value={correctionNote} onChange={(event) => setCorrectionNote(event.target.value)} maxLength={1200} placeholder="Explain any correction or important update to this article." />
           <label htmlFor="article-image-file">Upload Article Image (JPG, PNG, WEBP or GIF; max 5 MB)</label>
           <input id="article-image-file" style={styles.input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} />
           <label htmlFor="article-image-url">Or Article Image URL</label>
@@ -551,7 +569,7 @@ export default function Admin() {
           <label htmlFor="article-content">Article Content</label>
           <textarea id="article-content" style={{ ...styles.input, minHeight: "150px" }} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write your article here…" required />
           <button style={styles.button} type="submit" disabled={saving}>{uploading ? "Uploading image…" : saving ? "Saving…" : editingId ? "Update Article" : "Save Article"}</button>
-          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
+          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setAuthor(""); setSourceUrl(""); setCorrectionNote(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
         </form>
         {message && <p role="status" aria-live="polite">{message}</p>}
       </section>

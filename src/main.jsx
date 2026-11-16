@@ -434,11 +434,9 @@ if (existingSchema) existingSchema.remove();
       image: selected.image || selected.image_url || undefined,
       datePublished: selected.published_at || selected.created_at || undefined,
       dateModified: selected.updated_at || selected.created_at || undefined,
-      author: {
-        "@type": "Organization",
-        name: "The Daily Brief",
-url: window.location.origin
-      },
+      author: selected.author
+        ? { "@type": "Person", name: selected.author }
+        : { "@type": "Organization", name: "The Daily Brief", url: window.location.origin },
       publisher: {
         "@type": "Organization",
         name: "The Daily Brief"
@@ -509,6 +507,17 @@ if (selected) {
           <img className="article-hero" src={selected.image || selected.image_url} alt={selected.title} />
         )}
 
+        {selected.source_url && /^https?:\/\//i.test(selected.source_url) && (
+          <p className="article-source">
+            <strong>Source:</strong> <a href={selected.source_url} target="_blank" rel="noopener noreferrer">View original report <ArrowUpRight size={13}/></a>
+          </p>
+        )}
+        {selected.correction_note && (
+          <aside className="article-correction" aria-label="Correction or update">
+            <strong>Correction / Update</strong>
+            <p>{selected.correction_note}</p>
+          </aside>
+        )}
         <div className="article-body" style={{'--article-font-size':`${articleFontSize}px`}}>{articleText}</div>
 
         <section className="article-share" aria-label="Share this article">
