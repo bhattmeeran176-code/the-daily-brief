@@ -491,24 +491,36 @@ if (selected) {
           <div className="article-audio-heading"><Volume2 size={19}/><div><strong>Listen to this article</strong><span>Text-to-speech audio reader</span></div></div>
           <div className="article-audio-controls">
             <button type="button" className="article-audio-play" onClick={()=>{
-              if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) { setSpeechStatus('unsupported'); return; }
-              if (speechStatus === 'speaking') { window.speechSynthesis.pause(); setSpeechStatus('paused'); return; }
-              if (speechStatus === 'paused') { window.speechSynthesis.resume(); setSpeechStatus('speaking'); return; }
-              window.speechSynthesis.cancel();
-              const utterance = new SpeechSynthesisUtterance((selected.title || "") + ". " + articleText);
-              utterance.lang = speechLanguage;
-              utterance.rate = speechRate;
-              const voices = window.speechSynthesis.getVoices();
-              const matchingVoice = voices.find(voice => voice.lang?.toLowerCase() === speechLanguage.toLowerCase()) || voices.find(voice => voice.lang?.toLowerCase().startsWith(speechLanguage.slice(0,2).toLowerCase()));
-              if (matchingVoice) utterance.voice = matchingVoice;
-              utterance.onstart = () => setSpeechStatus('speaking');
-              utterance.onend = () => setSpeechStatus('idle');
-              utterance.onerror = () => setSpeechStatus('idle');
-              setSpeechStatus('speaking');
-              window.speechSynthesis.speak(utterance);
+              try {
+                const synth = window.speechSynthesis;
+                const Utterance = window.SpeechSynthesisUtterance;
+                if (!synth || !Utterance) { setSpeechStatus('unsupported'); return; }
+                if (speechStatus === 'speaking') { synth.pause(); setSpeechStatus('paused'); return; }
+                if (speechStatus === 'paused') { synth.resume(); setSpeechStatus('speaking'); return; }
+                synth.cancel();
+                const plainText = ((selected.title || '') + '. ' + String(articleText || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, ' and ').replace(/\\s+/g, ' ')).trim();
+                if (!plainText || plainText.length < 2) { setSpeechStatus('empty'); return; }
+                const utterance = new Utterance(plainText);
+                utterance.lang = speechLanguage;
+                utterance.rate = speechRate;
+                const chooseVoice = () => {
+                  const voices = synth.getVoices();
+                  const matchingVoice = voices.find(voice => voice.lang?.toLowerCase() === speechLanguage.toLowerCase()) || voices.find(voice => voice.lang?.toLowerCase().startsWith(speechLanguage.slice(0,2).toLowerCase()));
+                  if (matchingVoice) utterance.voice = matchingVoice;
+                  utterance.onstart = () => setSpeechStatus('speaking');
+                  utterance.onend = () => setSpeechStatus('idle');
+                  utterance.onerror = (event) => { console.error('Article speech error:', event.error); setSpeechStatus('error'); };
+                  setSpeechStatus('loading');
+                  synth.speak(utterance);
+                };
+                chooseVoice();
+              } catch (error) {
+                console.error('Could not start article audio:', error);
+                setSpeechStatus('error');
+              }
             }} aria-label={speechStatus === "speaking" ? "Pause article audio" : speechStatus === "paused" ? "Resume article audio" : "Play article audio"}>
-              {speechStatus === "speaking" ? <Pause size={18}/> : <Play size={18}/>}
-              {speechStatus === "speaking" ? "Pause" : speechStatus === "paused" ? "Resume" : "Listen"}
+              {speechStatus === "speaking" || speechStatus === "loading" ? <Pause size={18}/> : <Play size={18}/>}
+              {speechStatus === "speaking" ? "Pause" : speechStatus === "paused" ? "Resume" : speechStatus === "loading" ? "Starting…" : "Listen"}
             </button>
             <label className="article-audio-select">Voice language
               <select value={speechLanguage} onChange={event=>{window.speechSynthesis?.cancel();setSpeechStatus("idle");setSpeechLanguage(event.target.value);}}>
@@ -522,7 +534,7 @@ if (selected) {
             </label>
             <button type="button" className="article-audio-stop" onClick={()=>{window.speechSynthesis?.cancel();setSpeechStatus("idle");}} disabled={speechStatus==="idle"}><Square size={14}/> Stop</button>
           </div>
-          {speechStatus === "unsupported" ? <p className="article-audio-note" role="status">Audio reading is not supported by this browser. Try an updated version of Chrome.</p> : <p className="article-audio-note" role="status">{speechStatus === "speaking" ? "Reading this article aloud…" : speechStatus === "paused" ? "Audio paused." : "Uses voices available on your device or browser. Voice options may vary."}</p>}
+          {speechStatus === "unsupported" ? <p className="article-audio-note" role="status">Audio reading is not supported by this browser. Try an updated version of Chrome.</p> : speechStatus === "error" ? <p className="article-audio-note" role="status">The browser could not start audio. Check your phone's text-to-speech settings and try again.</p> : speechStatus === "empty" ? <p className="article-audio-note" role="status">This article has no readable text yet.</p> : <p className="article-audio-note" role="status">{speechStatus === "speaking" ? "Reading this article aloud…" : speechStatus === "loading" ? "Starting audio…" : speechStatus === "paused" ? "Audio paused." : "Uses voices available on your device or browser. Voice options may vary."}</p>}
         </section>
         <div className="article-tools" role="toolbar" aria-label="Article reading tools">
           <div className="font-size-tools" aria-label="Article text size">
