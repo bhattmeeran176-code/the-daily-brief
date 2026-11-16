@@ -472,3 +472,22 @@ body.theme-dark .nav button{color:#e7ece7}
 body.theme-dark .latest-nav-link{color:#ffb39e;border-color:#34413a}
 body.theme-dark .section-heading{border-color:#34413a}
 body.theme-dark .trending-brief{background:#202b25}
+
+
+/* Mobile polish batch 2 — keep hero actions clear above the fixed navigation */
+@media(max-width:700px){
+  .lead-card{height:470px;overflow:hidden}
+  .lead-overlay{left:0;right:0;bottom:0;padding:20px 18px 28px}
+  .lead-overlay h2{font-size:clamp(25px,6.6vw,32px);line-height:1.08;margin:12px 0 8px}
+  .lead-overlay p{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;font-size:12px;line-height:1.5}
+  .lead-overlay .read-link{margin-top:13px;min-height:24px}
+  .breaking-news-item{min-width:100%;max-width:100%;padding:12px 14px;align-items:flex-start}
+  .breaking-news-item strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow:hidden;text-overflow:clip;line-height:1.45}
+  .latest-updates-track{scrollbar-width:none;scroll-snap-type:x mandatory}
+  .latest-updates-track::-webkit-scrollbar{display:none}
+  .latest-update-item{min-width:100%;max-width:100%;scroll-snap-align:start;padding:13px 14px}
+  .latest-update-item strong{min-width:0}
+  .mobile-bottom-nav{padding-bottom:calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.98);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .site{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+}
+body.theme-dark .mobile-bottom-nav{background:rgba(24,32,27,.98)}
