@@ -495,6 +495,14 @@ export default function Admin() {
     button: { background: "#172033", color: "#fff", padding: "11px 18px", border: "none", borderRadius: "7px", cursor: "pointer", marginRight: "8px", marginTop: "8px" },
   };
 
+  const publishedArticles = articles.filter((article) => normalizeArticleStatus(article.status) === "published");
+  const draftCount = articles.filter((article) => normalizeArticleStatus(article.status) === "draft").length;
+  const totalViews = publishedArticles.reduce((sum, article) => sum + Math.max(0, Number(article.views_count) || 0), 0);
+  const topViewedArticles = [...publishedArticles]
+    .sort((a, b) => (Number(b.views_count) || 0) - (Number(a.views_count) || 0))
+    .filter((article) => (Number(article.views_count) || 0) > 0)
+    .slice(0, 5);
+
   if (authLoading) {
     return <main style={styles.page}><section style={styles.card}>Checking admin access…</section></main>;
   }
@@ -513,6 +521,38 @@ export default function Admin() {
         <p>Total Articles: {articles.length}</p>
         <p>Published: {articles.filter((article) => normalizeArticleStatus(article.status) === "published").length}</p>
       </header>
+
+      <section style={styles.card}>
+        <h2>Analytics Overview</h2>
+        <p style={{ color: "#687386", marginTop: "-6px" }}>Performance of your published stories</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))", gap: "12px", marginTop: "16px" }}>
+          {[
+            { label: "Total Views", value: totalViews.toLocaleString("en-IN"), accent: "#2563a6" },
+            { label: "Published", value: publishedArticles.length, accent: "#21845a" },
+            { label: "Drafts", value: draftCount, accent: "#8a5a32" },
+            { label: "Editor's Picks", value: publishedArticles.filter((article) => article.is_editor_pick).length, accent: "#6b55a3" },
+            { label: "Breaking News", value: publishedArticles.filter((article) => article.is_breaking).length, accent: "#b43b35" },
+          ].map((metric) => (
+            <div key={metric.label} style={{ background: "#f7f9fc", border: "1px solid #e5eaf2", borderTop: `3px solid ${metric.accent}`, borderRadius: "9px", padding: "14px 12px" }}>
+              <div style={{ color: "#687386", fontSize: "13px", marginBottom: "7px" }}>{metric.label}</div>
+              <strong style={{ color: "#172033", fontSize: "25px", lineHeight: 1.2 }}>{metric.value}</strong>
+            </div>
+          ))}
+        </div>
+        <h3 style={{ marginTop: "22px", marginBottom: "10px" }}>Top 5 Most Viewed Articles</h3>
+        {topViewedArticles.length === 0 ? (
+          <p style={{ color: "#687386" }}>No article view data is available yet. Views will appear here as readers visit your published stories.</p>
+        ) : (
+          <ol style={{ paddingLeft: "22px", margin: 0 }}>
+            {topViewedArticles.map((article) => (
+              <li key={article.id} style={{ padding: "9px 0", borderBottom: "1px solid #edf0f5" }}>
+                <div style={{ fontWeight: 600, color: "#172033" }}>{article.title}</div>
+                <div style={{ color: "#687386", fontSize: "13px", marginTop: "3px" }}>{(Number(article.views_count) || 0).toLocaleString("en-IN")} views · {article.category || "Uncategorised"}</div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
 
       <section style={styles.card}>
         <h2>My Profile</h2>
