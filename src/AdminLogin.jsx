@@ -65,8 +65,25 @@ async function handleForgotPassword() {
         padding: '30px',
         borderRadius: '12px'
       }}>
-        <h1>The Daily Brief</h1>
-        <h3>Admin Login</h3>
+        <h1 style={{
+          margin: '0 0 10px',
+          fontSize: '30px',
+          fontWeight: 800,
+          letterSpacing: '-0.8px',
+          color: '#e7b978',
+          background: 'linear-gradient(90deg, #f4d28b 0%, #d9a45f 48%, #f1eee8 100%)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>The Daily Brief</h1>
+        <h3 style={{
+          margin: '0 0 24px',
+          color: '#8fd3cf',
+          fontSize: '17px',
+          fontWeight: 700,
+          letterSpacing: '1.2px',
+          textTransform: 'uppercase'
+        }}>Admin Login</h3>
 
         <input
           type="email"
