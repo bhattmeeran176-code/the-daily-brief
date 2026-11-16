@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check, Bookmark, Moon, Sun, Eye} from 'lucide-react';
+import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check, Bookmark, Moon, Sun, Eye, Printer, ArrowUp, Minus, Plus, Maximize2, Minimize2} from 'lucide-react';
 import './styles.css';
 import AdminLogin from './AdminLogin.jsx';
 import PasswordReset from './PasswordReset.jsx';
@@ -190,6 +190,8 @@ function App(){
  const [publishedArticlesError, setPublishedArticlesError] = useState('');
  const [readingProgress, setReadingProgress] = useState(0);
  const [shareCopied, setShareCopied] = useState(false);
+ const [articleFontSize, setArticleFontSize] = useState(()=>{try{return Math.min(24,Math.max(16,Number(localStorage.getItem('tdb-article-font-size'))||19));}catch{return 19;}});
+ const [focusReading, setFocusReading] = useState(false);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem('tdb-theme')==='dark';}catch{return false;}});
  const [savedIds,setSavedIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('tdb-saved-articles')||'[]');}catch{return [];}});
@@ -219,6 +221,7 @@ const filtered = useMemo(
 
  useEffect(()=>{document.body.classList.toggle('theme-dark',darkMode);try{localStorage.setItem('tdb-theme',darkMode?'dark':'light');}catch{}},[darkMode]);
  useEffect(()=>{try{localStorage.setItem('tdb-saved-articles',JSON.stringify(savedIds));}catch{}},[savedIds]);
+ useEffect(()=>{try{localStorage.setItem('tdb-article-font-size',String(articleFontSize));}catch{}},[articleFontSize]);
  useEffect(()=>{if(!selected?.id)return;const viewKey='tdb-viewed-'+selected.id;try{if(sessionStorage.getItem(viewKey))return;sessionStorage.setItem(viewKey,'1');}catch{}let active=true;supabase.rpc('increment_article_view',{article_id:String(selected.id)}).then(({data,error})=>{if(!active||error){if(error)console.error('Article view count update failed:',error.message);return;}const count=Number(data||0);setPublishedArticles(previous=>previous.map(article=>String(article.id)===String(selected.id)?{...article,views_count:count}:article));setSelected(previous=>previous&&String(previous.id)===String(selected.id)?{...previous,views_count:count}:previous);});return()=>{active=false;};},[selected?.id]);
  const handleNewsletterSubmit = async (event) => {
   event.preventDefault();
@@ -467,7 +470,19 @@ if (selected) {
       <div className="reading-progress-track" aria-hidden="true">
         <div className="reading-progress-fill" style={{ width: `${readingProgress}%` }} />
       </div>
-      <article className="article-page">
+      <article className={`article-page${focusReading?' focus-reading':''}`}>
+        <div className="article-tools" role="toolbar" aria-label="Article reading tools">
+          <div className="font-size-tools" aria-label="Article text size">
+            <span>TEXT SIZE</span>
+            <button type="button" onClick={()=>setArticleFontSize(size=>Math.max(16,size-1))} disabled={articleFontSize<=16} aria-label="Decrease text size"><Minus size={15}/></button>
+            <strong>{articleFontSize}px</strong>
+            <button type="button" onClick={()=>setArticleFontSize(size=>Math.min(24,size+1))} disabled={articleFontSize>=24} aria-label="Increase text size"><Plus size={15}/></button>
+          </div>
+          <div className="article-utility-tools">
+            <button type="button" onClick={()=>window.print()}><Printer size={15}/> Print</button>
+            <button type="button" onClick={()=>setFocusReading(value=>!value)}>{focusReading?<Minimize2 size={15}/>:<Maximize2 size={15}/>} {focusReading?'Exit focus':'Focus mode'}</button>
+          </div>
+        </div>
         <button className="back" onClick={() => {
           setSelected(null);
           window.history.pushState({}, "", "/");
@@ -488,7 +503,7 @@ if (selected) {
           <img className="article-hero" src={selected.image || selected.image_url} alt={selected.title} />
         )}
 
-        <div className="article-body">{articleText}</div>
+        <div className="article-body" style={{'--article-font-size':`${articleFontSize}px`}}>{articleText}</div>
 
         <section className="article-share" aria-label="Share this article">
           <div>
@@ -523,6 +538,7 @@ if (selected) {
           </section>
         )}
       </article>
+      {readingProgress>12 && <button type="button" className="back-to-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})} aria-label="Back to top" title="Back to top"><ArrowUp size={18}/></button>}
     </>
   );
 }
