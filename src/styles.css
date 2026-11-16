@@ -284,3 +284,12 @@ body.theme-dark .text-link{color:#e7ece7;border-color:#435148}
 @media(max-width:760px){.latest-nav-link{font-size:10px;padding:7px 8px}.topic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.topic-card{padding:13px;flex-wrap:wrap}.topic-card strong{margin-left:0}.discovery-section{margin-top:38px}}
 
 /* Batch 2 route styling finalized after production build check. */
+
+
+/* Editorial transparency: source attribution and correction notes */
+.article-source{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:22px 0 14px;padding:13px 16px;border:1px solid var(--line,#dedfd9);font-size:13px;color:var(--muted,#666)}
+.article-source a{display:inline-flex;align-items:center;gap:5px;color:var(--accent,#a45a3b);font-weight:700;text-decoration:none}
+.article-source a:hover{text-decoration:underline}
+.article-correction{margin:18px 0 24px;padding:16px 18px;border-left:3px solid #b45b39;background:rgba(180,91,57,.08);color:inherit}
+.article-correction strong{display:block;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.article-correction p{margin:0;font-size:14px;line-height:1.65}
