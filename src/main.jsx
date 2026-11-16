@@ -221,7 +221,7 @@ const filtered = useMemo(
  const trendingTopics = categoryCounts.slice(0,5);
  const editorPicks = allStories.filter(story=>Boolean(story.is_editor_pick)).slice(0,3);
  const categorySections = categories.slice(1).map(category=>({category,stories:allStories.filter(story=>story.category===category).slice(0,3)})).filter(section=>section.stories.length>0);
- const isLatestPage = window.location.pathname.replace(/\\/$/,"")==="/latest";
+ const isLatestPage = window.location.pathname === "/latest" || window.location.pathname === "/latest/";
 
  const toggleSaved = (story)=>setSavedIds(previous=>{const id=String(story.id);return previous.includes(id)?previous.filter(item=>item!==id):[...previous,id];});
 
