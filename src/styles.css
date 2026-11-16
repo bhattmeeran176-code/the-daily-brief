@@ -293,3 +293,17 @@ body.theme-dark .text-link{color:#e7ece7;border-color:#435148}
 .article-correction{margin:18px 0 24px;padding:16px 18px;border-left:3px solid #b45b39;background:rgba(180,91,57,.08);color:inherit}
 .article-correction strong{display:block;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
 .article-correction p{margin:0;font-size:14px;line-height:1.65}
+
+
+/* Newsroom Experience Batch 4 */
+.author-byline-link{border:0;background:transparent;color:var(--accent,#a45a3b);padding:0;text-decoration:underline;text-underline-offset:3px;font:inherit}
+.article-tags{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}
+.article-tags button{border:1px solid var(--line,#dedfd9);background:transparent;color:inherit;padding:7px 12px;border-radius:2px;font-size:12px;cursor:pointer}
+.article-tags button:hover{border-color:var(--accent,#a45a3b);color:var(--accent,#a45a3b)}
+.author-profile-page{min-height:65vh;padding-top:42px;padding-bottom:70px}
+.author-profile-page h1{font-family:'Playfair Display',Georgia,serif;font-size:clamp(38px,6vw,68px);margin:28px 0 12px}
+.author-profile-page h2{font-family:'Playfair Display',Georgia,serif;margin:42px 0 22px}
+.author-profile-intro{color:var(--muted,#74786f);max-width:620px;line-height:1.7}
+.clear-history-button{border:1px solid var(--line,#dedfd9);background:transparent;color:inherit;padding:9px 12px;font-size:12px}
+.reading-history-section .section-heading{align-items:center}
+body.theme-dark .article-tags button,body.theme-dark .clear-history-button{border-color:#39423d;color:#e8e9e5}
