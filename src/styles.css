@@ -866,3 +866,102 @@ body.theme-dark .site>main>.discovery-section .topic-card{background:#202b25;bor
     aspect-ratio: 16 / 9;
   }
 }
+
+
+/* Mobile story section alignment — batch 8 */
+@media (max-width: 700px) {
+  /* Use the full available width when there are only a few latest stories */
+  .site>main>#latest .story-grid,
+  .site>main>.most-read-section .story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .site>main>#latest .story-card,
+  .site>main>.most-read-section .story-card {
+    display: grid;
+    grid-template-columns: 116px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 14px;
+    min-width: 0;
+    padding: 0 0 17px;
+    margin: 0 0 17px;
+    border-bottom: 1px solid #e1e2dc;
+  }
+
+  .site>main>#latest .story-card .story-image,
+  .site>main>.most-read-section .story-card .story-image {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    width: 116px;
+    height: 92px;
+    aspect-ratio: auto;
+    margin: 0;
+  }
+
+  .site>main>#latest .story-card .story-meta,
+  .site>main>.most-read-section .story-card .story-meta {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 0 5px;
+    font-size: 8px;
+    line-height: 1.35;
+  }
+
+  .site>main>#latest .story-card h3,
+  .site>main>.most-read-section .story-card h3 {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    margin: 0 0 6px;
+    font-size: 17px;
+    line-height: 1.23;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .site>main>#latest .story-card p,
+  .site>main>.most-read-section .story-card p {
+    grid-column: 2;
+    grid-row: 3;
+    min-width: 0;
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .site>main>#latest .story-card .card-bottom {
+    grid-column: 2;
+    grid-row: 4;
+    min-width: 0;
+    margin-top: 9px;
+    padding-top: 7px;
+    font-size: 9px;
+  }
+
+  .site>main>.most-read-section .story-card .story-image {
+    grid-row: 1 / 4;
+  }
+}
+
+@media (max-width: 380px) {
+  .site>main>#latest .story-card,
+  .site>main>.most-read-section .story-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+    column-gap: 11px;
+  }
+  .site>main>#latest .story-card .story-image,
+  .site>main>.most-read-section .story-card .story-image {
+    width: 96px;
+    height: 82px;
+  }
+  .site>main>#latest .story-card h3,
+  .site>main>.most-read-section .story-card h3 {
+    font-size: 15px;
+  }
+}
