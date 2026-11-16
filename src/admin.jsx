@@ -19,6 +19,7 @@ export default function Admin() {
   const [author, setAuthor] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [correctionNote, setCorrectionNote] = useState("");
+  const [tags, setTags] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -178,6 +179,7 @@ export default function Admin() {
         author: author.trim(),
         source_url: sourceUrl.trim(),
         correction_note: correctionNote.trim(),
+        tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 10),
       };
 
       const result = editingId
@@ -196,6 +198,7 @@ export default function Admin() {
       setAuthor("");
       setSourceUrl("");
       setCorrectionNote("");
+      setTags("");
       setImageUrl("");
       setImageFile(null);
       setEditingId(null);
@@ -287,6 +290,7 @@ export default function Admin() {
     setAuthor(article.author || "");
     setSourceUrl(article.source_url || "");
     setCorrectionNote(article.correction_note || "");
+    setTags(Array.isArray(article.tags) ? article.tags.join(", ") : (article.tags || ""));
     setImageUrl(article.image_url || "");
     setImageFile(null);
     setEditingId(article.id);
@@ -562,6 +566,8 @@ export default function Admin() {
           <input id="article-source-url" style={styles.input} type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} maxLength={1000} placeholder="https://example.com/source-report" />
           <label htmlFor="article-correction-note">Correction / Update Note (optional)</label>
           <textarea id="article-correction-note" style={{ ...styles.input, minHeight: "75px" }} value={correctionNote} onChange={(event) => setCorrectionNote(event.target.value)} maxLength={1200} placeholder="Explain any correction or important update to this article." />
+          <label htmlFor="article-tags">Article Tags (comma-separated)</label>
+          <input id="article-tags" style={styles.input} type="text" value={tags} onChange={(event) => setTags(event.target.value)} maxLength={300} placeholder="e.g. AIIMS, Healthcare, Kashmir" />
           <label htmlFor="article-image-file">Upload Article Image (JPG, PNG, WEBP or GIF; max 5 MB)</label>
           <input id="article-image-file" style={styles.input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} />
           <label htmlFor="article-image-url">Or Article Image URL</label>
@@ -569,7 +575,7 @@ export default function Admin() {
           <label htmlFor="article-content">Article Content</label>
           <textarea id="article-content" style={{ ...styles.input, minHeight: "150px" }} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write your article here…" required />
           <button style={styles.button} type="submit" disabled={saving}>{uploading ? "Uploading image…" : saving ? "Saving…" : editingId ? "Update Article" : "Save Article"}</button>
-          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setAuthor(""); setSourceUrl(""); setCorrectionNote(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
+          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setAuthor(""); setSourceUrl(""); setCorrectionNote(""); setTags(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
         </form>
         {message && <p role="status" aria-live="polite">{message}</p>}
       </section>
