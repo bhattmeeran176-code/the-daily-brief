@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
+import ResearchDesk from "./ResearchDesk";
 
 const ADMIN_EMAIL = "thedailybrieffff@gmail.com";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -529,6 +530,8 @@ export default function Admin() {
         <p>Total Articles: {articles.length}</p>
         <p>Published: {articles.filter((article) => normalizeArticleStatus(article.status) === "published").length}</p>
       </header>
+
+      <ResearchDesk />
 
       <section style={styles.card}>
         <h2>Analytics Overview</h2>
