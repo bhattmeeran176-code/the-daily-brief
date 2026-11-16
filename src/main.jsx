@@ -756,7 +756,6 @@ if (window.location.pathname === "/about") {
   )}
 
   <main>
-}
    {!isLatestPage && <section className="lead-grid">
     {featured ? <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt={featured.title}/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article> : <div className="empty">{publishedArticlesError ? `Stories could not load: ${publishedArticlesError}` : 'No published stories yet. Please check back soon.'}</div>}
     <aside className="side-brief trending-brief"><div className="section-label"><span className="trending-mark">↗</span> TRENDING NOW</div><div className="trending-brief-list">{(mostReadStories.length?mostReadStories:allStories.filter(story=>story.id!==featured?.id).slice(0,5)).slice(0,5).map((story,index)=><button type="button" className="trending-brief-item" key={story.id} onClick={()=>openStory(story)}><span>{index+1}</span><strong>{story.title}</strong></button>)}</div></aside>
@@ -774,6 +773,12 @@ if (window.location.pathname === "/about") {
    <section className="newsletter" id="newsletter"><div><div className="eyebrow">THE DAILY BRIEFING</div><h2>A sharper view<br/><i>of the day.</i></h2><p>A considered digest of the stories shaping our world.</p></div><form onSubmit={handleNewsletterSubmit}><label htmlFor="email">GET THE NEWSLETTER</label><div className="email-row"><input id="email" type="email" required maxLength="254" autoComplete="email" placeholder="Your email address" value={email} onChange={e=>{setEmail(e.target.value);if(newsletterStatus!=='idle'){setNewsletterStatus('idle');setNewsletterMessage('');}}} disabled={newsletterStatus==='submitting'}/><button type="submit" disabled={newsletterStatus==='submitting'}>{newsletterStatus==='submitting'?'Saving…':newsletterStatus==='success'?'Subscribed':'Sign me up'} <ArrowUpRight size={16}/></button></div><small role="status" aria-live="polite">{newsletterMessage || 'No noise. Just the stories worth your time.'}</small><small>By subscribing, you agree to receive email updates from The Daily Brief.</small></form></section>
   </main>
   <footer><a className="brand footer-brand" href="/" aria-label="The Daily Brief home"><img className="brand-logo" src={siteBranding.footerLogo || siteBranding.headerLogo || "/daily-brief-logo.svg"} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/daily-brief-logo.svg"; }} alt="The Daily Brief" /></a><p>Independent journalism. Clear perspectives.</p><span>© 2026 The Daily Brief</span><a href="/latest">Latest News</a><a href="/about">About Us</a><a href="/contact">Contact Us</a><a href="/privacy-policy">Privacy Policy</a></footer>
+  {!selected && !isLatestPage && <nav className="mobile-bottom-nav" aria-label="Quick navigation">
+   <button type="button" className="active" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}><span>⌂</span>Home</button>
+   <button type="button" onClick={()=>document.getElementById('most-read')?.scrollIntoView({behavior:'smooth'})}><span>↗</span>Trending</button>
+   <button type="button" onClick={()=>document.getElementById('saved-stories')?.scrollIntoView({behavior:'smooth'})}><Bookmark size={18}/>Saved</button>
+   <button type="button" onClick={()=>document.querySelector('footer')?.scrollIntoView({behavior:'smooth'})}><Menu size={18}/>More</button>
+  </nav>}
  </div>
 }
 
