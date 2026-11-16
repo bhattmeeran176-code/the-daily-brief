@@ -237,16 +237,24 @@ export default function Admin() {
     setMessage(nextValue ? "Article marked as Breaking News." : "Breaking News label removed.");
   }
 
-  async function unpublishArticle(id) {  async function toggleEditorPick(article) {
+  async function toggleEditorPick(article) {
     if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
     const nextValue = !article.is_editor_pick;
-    const { data, error } = await supabase.from("articles").update({ is_editor_pick: nextValue }).eq("id", article.id).select().single();
-    if (error) { setMessage("Editor's Pick update failed: " + error.message); return; }
-    setArticles(previous => previous.map(item => item.id === article.id ? data : item));
+    const { data, error } = await supabase
+      .from("articles")
+      .update({ is_editor_pick: nextValue })
+      .eq("id", article.id)
+      .select()
+      .single();
+    if (error) {
+      setMessage("Editor's Pick update failed: " + error.message);
+      return;
+    }
+    setArticles((previous) => previous.map((item) => item.id === article.id ? data : item));
     setMessage(nextValue ? "Article added to Editor's Picks." : "Article removed from Editor's Picks.");
   }
 
-
+  async function unpublishArticle(id) {
     if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
     if (!window.confirm("Move this article back to Draft? It will no longer appear on the public website.")) return;
     const { data, error } = await supabase
