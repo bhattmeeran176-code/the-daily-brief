@@ -195,6 +195,8 @@ function App(){
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem('tdb-theme')==='dark';}catch{return false;}});
  const [savedIds,setSavedIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('tdb-saved-articles')||'[]');}catch{return [];}});
+ const [readingHistory,setReadingHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem('tdb-reading-history')||'[]');}catch{return [];}});
+ const [authorProfileSlug,setAuthorProfileSlug]=useState(()=>{const match=window.location.pathname.match(/^\/author\/([^/]+)\/?$/);return match?decodeURIComponent(match[1]):'';});
  const allStories = [
   ...publishedArticles.map((article, index) => ({
     ...article,
@@ -217,6 +219,9 @@ const filtered = useMemo(
  const latestUpdates = allStories.slice(0, 4);
  const mostReadStories = [...allStories].filter(s=>Number(s.views_count)>0).sort((a,b)=>Number(b.views_count||0)-Number(a.views_count||0)).slice(0,4);
  const savedStories = allStories.filter(s=>savedIds.includes(String(s.id)));
+ const recentlyViewedStories = readingHistory.map(id=>allStories.find(story=>String(story.id)===String(id))).filter(Boolean).slice(0,8);
+ const authorStories = authorProfileSlug ? allStories.filter(story=>slugify(story.author||'')===authorProfileSlug) : [];
+ const authorProfileName = authorStories[0]?.author || (authorProfileSlug ? authorProfileSlug.replace(/-/g,' ') : '');
  const categoryCounts = categories.slice(1).map(category => ({category,count:allStories.filter(story=>story.category===category).length})).filter(item=>item.count>0).sort((a,b)=>b.count-a.count);
  const trendingTopics = categoryCounts.slice(0,5);
  const editorPicks = allStories.filter(story=>Boolean(story.is_editor_pick)).slice(0,3);
@@ -227,6 +232,9 @@ const filtered = useMemo(
 
  useEffect(()=>{document.body.classList.toggle('theme-dark',darkMode);try{localStorage.setItem('tdb-theme',darkMode?'dark':'light');}catch{}},[darkMode]);
  useEffect(()=>{try{localStorage.setItem('tdb-saved-articles',JSON.stringify(savedIds));}catch{}},[savedIds]);
+ useEffect(()=>{try{localStorage.setItem('tdb-reading-history',JSON.stringify(readingHistory));}catch{}},[readingHistory]);
+ useEffect(()=>{const syncRoute=()=>{const match=window.location.pathname.match(/^\/author\/([^/]+)\/?$/);setAuthorProfileSlug(match?decodeURIComponent(match[1]):'');};window.addEventListener('popstate',syncRoute);return()=>window.removeEventListener('popstate',syncRoute);},[]);
+ useEffect(()=>{if(!selected?.id)return;setReadingHistory(previous=>[String(selected.id),...previous.filter(id=>String(id)!==String(selected.id))].slice(0,12));},[selected?.id]);
  useEffect(()=>{try{localStorage.setItem('tdb-article-font-size',String(articleFontSize));}catch{}},[articleFontSize]);
  useEffect(()=>{if(!selected?.id)return;const viewKey='tdb-viewed-'+selected.id;try{if(sessionStorage.getItem(viewKey))return;sessionStorage.setItem(viewKey,'1');}catch{}let active=true;supabase.rpc('increment_article_view',{article_id:String(selected.id)}).then(({data,error})=>{if(!active||error){if(error)console.error('Article view count update failed:',error.message);return;}const count=Number(data||0);setPublishedArticles(previous=>previous.map(article=>String(article.id)===String(selected.id)?{...article,views_count:count}:article));setSelected(previous=>previous&&String(previous.id)===String(selected.id)?{...previous,views_count:count}:previous);});return()=>{active=false;};},[selected?.id]);
  const handleNewsletterSubmit = async (event) => {
@@ -499,7 +507,7 @@ if (selected) {
           <span><Clock3 size={15} /> {readingMinutes} min read</span>
           <span><Eye size={15} /> {Number(selected.views_count||0).toLocaleString()} views</span>
           <button type="button" className="save-story-button" onClick={()=>toggleSaved(selected)}><Bookmark size={15} fill={isSaved?'currentColor':'none'}/>{isSaved?'Saved':'Save for later'}</button>
-          {selected.author && <span>By {selected.author}</span>}
+          {selected.author && <button type="button" className="author-byline-link" onClick={()=>{const slug=slugify(selected.author);setSelected(null);setAuthorProfileSlug(slug);window.history.pushState({}, "", "/author/"+slug);window.scrollTo({top:0,behavior:"smooth"});}}>By {selected.author}</button>}
           {(selected.published_at || selected.created_at) && <span>{new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(selected.published_at || selected.created_at))}</span>}
         </div>
 
@@ -518,6 +526,7 @@ if (selected) {
             <p>{selected.correction_note}</p>
           </aside>
         )}
+        {Array.isArray(selected.tags) && selected.tags.length>0 && <div className="article-tags" aria-label="Article topics">{selected.tags.map(tag=><button type="button" key={tag} onClick={()=>{setSelected(null);setAuthorProfileSlug("");setQuery(tag);window.history.pushState({}, "", "/");window.scrollTo({top:0,behavior:"smooth"});}}>{tag}</button>)}</div>}
         <div className="article-body" style={{'--article-font-size':`${articleFontSize}px`}}>{articleText}</div>
 
         <section className="article-share" aria-label="Share this article">
@@ -555,6 +564,18 @@ if (selected) {
       </article>
       {readingProgress>12 && <button type="button" className="back-to-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})} aria-label="Back to top" title="Back to top"><ArrowUp size={18}/></button>}
     </>
+  );
+}
+if (authorProfileSlug && !selected) {
+  return (
+    <main className="author-profile-page site">
+      <button type="button" className="back" onClick={()=>{setAuthorProfileSlug("");window.history.pushState({}, "", "/");window.scrollTo({top:0,behavior:"smooth"});}}>← Back to Home</button>
+      <div className="eyebrow">CONTRIBUTOR PROFILE</div>
+      <h1>{authorProfileName || "Author"}</h1>
+      <p className="author-profile-intro">Articles and reporting published by {authorProfileName || "this contributor"} at The Daily Brief.</p>
+      <h2>Published stories</h2>
+      {authorStories.length ? <div className="story-grid">{authorStories.map(story=><article className="story-card" key={story.id} onClick={()=>{setAuthorProfileSlug("");setSelected(story);window.history.pushState({}, "", "/article/"+slugify(story.slug||story.title));window.scrollTo({top:0,behavior:"smooth"});}}><div className="story-image">{(story.image_url||story.image)&&<img src={story.image_url||story.image} alt=""/>}<span>{story.category}</span></div><h3>{story.title}</h3><p>{(story.content||"").replace(/\s+/g," ").slice(0,180)}</p></article>)}</div> : <p>No published stories found for this author.</p>}
+    </main>
   );
 }
 if (window.location.pathname === "/about") {
@@ -647,6 +668,7 @@ if (window.location.pathname === "/about") {
     {featured ? <article className="lead-card" onClick={()=>openStory(featured)}><img src={featured.image} alt={featured.title}/><div className="lead-overlay"><span className="pill">TOP STORY · {featured.category.toUpperCase()}</span><h2>{featured.title}</h2><p>{featured.excerpt}</p><span className="read-link">Read the briefing <ArrowUpRight size={16}/></span></div></article> : <div className="empty">{publishedArticlesError ? `Stories could not load: ${publishedArticlesError}` : 'No published stories yet. Please check back soon.'}</div>}
     <aside className="side-brief"><div className="section-label">THE EDITOR'S BRIEFING <span>01 — 03</span></div><h3>Beyond the noise.<br/>Towards understanding.</h3><p>We focus on the context behind the headlines: the people, policies and ideas shaping tomorrow.</p><div className="side-stat"><strong>01</strong><span>Context before commentary</span></div><div className="side-stat"><strong>02</strong><span>Curiosity across borders</span></div><div className="side-stat"><strong>03</strong><span>Clarity over noise</span></div></aside>
    </section>}
+   {!isLatestPage && recentlyViewedStories.length>0 && <section className="latest reading-history-section"><div className="section-heading"><div><div className="eyebrow">PICK UP WHERE YOU LEFT OFF</div><h2>Recently viewed</h2></div><button type="button" className="clear-history-button" onClick={()=>setReadingHistory([])}>Clear history</button></div><div className="story-grid">{recentlyViewedStories.map(story=><article className="story-card" key={story.id} onClick={()=>openStory(story)}><div className="story-image">{(story.image_url||story.image)&&<img src={story.image_url||story.image} alt=""/>}<span>{story.category}</span></div><h3>{story.title}</h3><p>{story.excerpt}</p></article>)}</div></section>}
    {!isLatestPage && savedStories.length>0&&<section className="latest saved-stories-section" id="saved-stories"><div className="section-heading"><div><div className="eyebrow">YOUR READING LIST</div><h2>Saved stories</h2></div></div><div className="story-grid">{savedStories.map(story=><article className="story-card" key={story.id} onClick={()=>openStory(story)}><div className="story-image"><img src={story.image} alt=""/><span>{story.category}</span></div><div className="story-meta">{story.category}</div><h3>{story.title}</h3><button type="button" className="save-card-button" onClick={event=>{event.stopPropagation();toggleSaved(story);}}><Bookmark size={14} fill="currentColor"/> Remove from saved</button></article>)}</div></section>}
    <section className="latest" id="latest"><div className="section-heading"><div><div className="eyebrow">{isLatestPage?'THE LATEST':'STAY INFORMED'}</div><h2>{isLatestPage?'Latest News':active==='All'?'Latest stories':active+' stories'}</h2></div><div className="filters">{categories.map(c=><button className={active===c?'active':''} key={c} onClick={()=>setActive(c)}>{c}</button>)}</div></div>
     {filtered.length?<div className="story-grid">{filtered.filter(s=>!s.featured || active!=='All' || query || filtered.length===1).map(s=><article className="story-card" key={s.id} onClick={()=>openStory(s)}><div className="story-image"><img src={s.image} alt=""/><span>{s.category}</span></div><div className="story-meta">{s.tag} <span>·</span> {s.read}</div><h3>{s.title}</h3><p>{s.excerpt}</p><div className="card-bottom"><span>{s.author} · <Eye size={12} style={{display:'inline',verticalAlign:'middle'}}/> {Number(s.views_count||0).toLocaleString()}</span><button type="button" className="save-card-button" aria-label={savedIds.includes(String(s.id))?'Remove saved story':'Save story'} onClick={event=>{event.stopPropagation();toggleSaved(s);}}><Bookmark size={15} fill={savedIds.includes(String(s.id))?'currentColor':'none'}/></button><ArrowUpRight size={16}/></div></article>)}</div>:<div className="empty">No stories match that search. Try another keyword or category.</div>}
