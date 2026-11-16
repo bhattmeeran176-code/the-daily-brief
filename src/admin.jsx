@@ -21,6 +21,8 @@ export default function Admin() {
   const [correctionNote, setCorrectionNote] = useState("");
   const [tags, setTags] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageCaption, setImageCaption] = useState("");
+  const [imageCredit, setImageCredit] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -175,6 +177,8 @@ export default function Admin() {
         title: title.trim(),
         category,
         image_url: finalImageUrl,
+        image_caption: imageCaption.trim(),
+        image_credit: imageCredit.trim(),
         content: content.trim(),
         author: author.trim(),
         source_url: sourceUrl.trim(),
@@ -200,6 +204,8 @@ export default function Admin() {
       setCorrectionNote("");
       setTags("");
       setImageUrl("");
+      setImageCaption("");
+      setImageCredit("");
       setImageFile(null);
       setEditingId(null);
       const fileInput = document.getElementById("article-image-file");
@@ -292,6 +298,8 @@ export default function Admin() {
     setCorrectionNote(article.correction_note || "");
     setTags(Array.isArray(article.tags) ? article.tags.join(", ") : (article.tags || ""));
     setImageUrl(article.image_url || "");
+    setImageCaption(article.image_caption || "");
+    setImageCredit(article.image_credit || "");
     setImageFile(null);
     setEditingId(article.id);
     setMessage("Editing article. Choose a new image only if you want to replace the current one.");
@@ -612,10 +620,14 @@ export default function Admin() {
           <input id="article-image-file" style={styles.input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} />
           <label htmlFor="article-image-url">Or Article Image URL</label>
           <input id="article-image-url" style={styles.input} type="url" value={imageUrl} onChange={(event) => setImageUrl(event.target.value)} placeholder="Paste image URL here" />
+          <label htmlFor="article-image-caption">Image Caption (optional)</label>
+          <input id="article-image-caption" style={styles.input} type="text" value={imageCaption} onChange={(event) => setImageCaption(event.target.value)} maxLength={300} placeholder="Describe what the image shows" />
+          <label htmlFor="article-image-credit">Photo Credit (optional)</label>
+          <input id="article-image-credit" style={styles.input} type="text" value={imageCredit} onChange={(event) => setImageCredit(event.target.value)} maxLength={160} placeholder="Photographer, agency or source" />
           <label htmlFor="article-content">Article Content</label>
           <textarea id="article-content" style={{ ...styles.input, minHeight: "150px" }} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write your article here…" required />
           <button style={styles.button} type="submit" disabled={saving}>{uploading ? "Uploading image…" : saving ? "Saving…" : editingId ? "Update Article" : "Save Article"}</button>
-          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setAuthor(""); setSourceUrl(""); setCorrectionNote(""); setTags(""); setImageUrl(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
+          {editingId && <button style={{ ...styles.button, background: "#687386" }} type="button" onClick={() => { setEditingId(null); setTitle(""); setCategory("World"); setContent(""); setAuthor(""); setSourceUrl(""); setCorrectionNote(""); setTags(""); setImageUrl(""); setImageCaption(""); setImageCredit(""); setImageFile(null); setMessage("Edit cancelled."); }}>Cancel Edit</button>}
         </form>
         {message && <p role="status" aria-live="polite">{message}</p>}
       </section>
