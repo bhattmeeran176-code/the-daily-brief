@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Search, Menu, ArrowUpRight, Clock3, Globe2, X, ChevronRight, Mail, Share2, Copy, Check, Bookmark, Moon, Sun, Eye, Printer, ArrowUp, Minus, Plus, Maximize2, Minimize2, Volume2, Play, Pause, Square} from 'lucide-react';
 import './styles.css';
@@ -195,6 +195,8 @@ function App(){
  const [speechLanguage, setSpeechLanguage] = useState('en-IN');
  const [speechRate, setSpeechRate] = useState(1);
  const [speechStatus, setSpeechStatus] = useState('idle');
+ const speechQueueRef = useRef([]);
+ const speechRunIdRef = useRef(0);
  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [menu,setMenu]=useState(false), [email,setEmail]=useState(''), [newsletterStatus,setNewsletterStatus]=useState('idle'), [newsletterMessage,setNewsletterMessage]=useState('');
  const [darkMode,setDarkMode]=useState(()=>{try{return localStorage.getItem('tdb-theme')==='dark';}catch{return false;}});
  const [savedIds,setSavedIds]=useState(()=>{try{return JSON.parse(localStorage.getItem('tdb-saved-articles')||'[]');}catch{return [];}});
@@ -238,7 +240,7 @@ const filtered = useMemo(
  useEffect(()=>{try{localStorage.setItem('tdb-reading-history',JSON.stringify(readingHistory));}catch{}},[readingHistory]);
  useEffect(()=>{const syncRoute=()=>{const match=window.location.pathname.match(/^\/author\/([^/]+)\/?$/);setAuthorProfileSlug(match?decodeURIComponent(match[1]):'');};window.addEventListener('popstate',syncRoute);return()=>window.removeEventListener('popstate',syncRoute);},[]);
  useEffect(()=>{if(!selected?.id)return;setReadingHistory(previous=>[String(selected.id),...previous.filter(id=>String(id)!==String(selected.id))].slice(0,12));},[selected?.id]);
- useEffect(()=>{if('speechSynthesis' in window){window.speechSynthesis.cancel();setSpeechStatus('idle');}return()=>{if('speechSynthesis' in window)window.speechSynthesis.cancel();};},[selected?.id]);
+ useEffect(()=>{speechRunIdRef.current+=1;speechQueueRef.current=[];if('speechSynthesis' in window){window.speechSynthesis.cancel();setSpeechStatus('idle');}return()=>{speechRunIdRef.current+=1;speechQueueRef.current=[];if('speechSynthesis' in window)window.speechSynthesis.cancel();};},[selected?.id]);
  useEffect(()=>{try{localStorage.setItem('tdb-article-font-size',String(articleFontSize));}catch{}},[articleFontSize]);
  useEffect(()=>{if(!selected?.id)return;const viewKey='tdb-viewed-'+selected.id;try{if(sessionStorage.getItem(viewKey))return;sessionStorage.setItem(viewKey,'1');}catch{}let active=true;supabase.rpc('increment_article_view',{article_id:String(selected.id)}).then(({data,error})=>{if(!active||error){if(error)console.error('Article view count update failed:',error.message);return;}const count=Number(data||0);setPublishedArticles(previous=>previous.map(article=>String(article.id)===String(selected.id)?{...article,views_count:count}:article));setSelected(previous=>previous&&String(previous.id)===String(selected.id)?{...previous,views_count:count}:previous);});return()=>{active=false;};},[selected?.id]);
  const handleNewsletterSubmit = async (event) => {
@@ -498,22 +500,57 @@ if (selected) {
                 if (speechStatus === 'speaking') { synth.pause(); setSpeechStatus('paused'); return; }
                 if (speechStatus === 'paused') { synth.resume(); setSpeechStatus('speaking'); return; }
                 synth.cancel();
-                const plainText = ((selected.title || '') + '. ' + String(articleText || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, ' and ').replace(/\\s+/g, ' ')).trim();
-                if (!plainText || plainText.length < 2) { setSpeechStatus('empty'); return; }
-                const utterance = new Utterance(plainText);
-                utterance.lang = speechLanguage;
-                utterance.rate = speechRate;
-                const chooseVoice = () => {
-                  const voices = synth.getVoices();
-                  const matchingVoice = voices.find(voice => voice.lang?.toLowerCase() === speechLanguage.toLowerCase()) || voices.find(voice => voice.lang?.toLowerCase().startsWith(speechLanguage.slice(0,2).toLowerCase()));
+                const rawText = (String(selected.title || '') + '. ' + String(articleText || ''))
+                  .replace(/<[^>]*>/g, ' ')
+                  .replace(/&nbsp;/gi, ' ')
+                  .replace(/&amp;/gi, ' and ')
+                  .replace(/&quot;/gi, '"')
+                  .replace(/&#39;/gi, "'")
+                  .replace(/&lt;/gi, '<')
+                  .replace(/&gt;/gi, '>')
+                  .replace(/\s+/g, ' ')
+                  .trim();
+                if (!rawText || rawText.length < 2) { setSpeechStatus('empty'); return; }
+                const chunks = [];
+                const sentences = rawText.match(/[^.!?。！？]+[.!?。！？]?/g) || [rawText];
+                let current = '';
+                sentences.forEach(sentence => {
+                  const part = sentence.trim();
+                  if (!part) return;
+                  if ((current + ' ' + part).trim().length > 1200 && current) {
+                    chunks.push(current.trim());
+                    current = part;
+                  } else current = (current + ' ' + part).trim();
+                });
+                if (current) chunks.push(current);
+                speechQueueRef.current = chunks;
+                const runId = ++speechRunIdRef.current;
+                const voices = synth.getVoices();
+                const matchingVoice = voices.find(voice => voice.lang?.toLowerCase() === speechLanguage.toLowerCase())
+                  || voices.find(voice => voice.lang?.toLowerCase().startsWith(speechLanguage.slice(0, 2).toLowerCase()));
+                const speakChunk = (index) => {
+                  if (runId !== speechRunIdRef.current) return;
+                  if (index >= speechQueueRef.current.length) {
+                    speechQueueRef.current = [];
+                    setSpeechStatus('idle');
+                    return;
+                  }
+                  const utterance = new Utterance(speechQueueRef.current[index]);
+                  utterance.lang = speechLanguage;
+                  utterance.rate = speechRate;
                   if (matchingVoice) utterance.voice = matchingVoice;
-                  utterance.onstart = () => setSpeechStatus('speaking');
-                  utterance.onend = () => setSpeechStatus('idle');
-                  utterance.onerror = (event) => { console.error('Article speech error:', event.error); setSpeechStatus('error'); };
-                  setSpeechStatus('loading');
+                  utterance.onstart = () => { if (runId === speechRunIdRef.current) setSpeechStatus('speaking'); };
+                  utterance.onend = () => { if (runId === speechRunIdRef.current) speakChunk(index + 1); };
+                  utterance.onerror = (event) => {
+                    if (runId !== speechRunIdRef.current || event.error === 'canceled' || event.error === 'interrupted') return;
+                    console.error('Article speech error:', event.error);
+                    speechQueueRef.current = [];
+                    setSpeechStatus('error');
+                  };
                   synth.speak(utterance);
                 };
-                chooseVoice();
+                setSpeechStatus('loading');
+                speakChunk(0);
               } catch (error) {
                 console.error('Could not start article audio:', error);
                 setSpeechStatus('error');
@@ -532,7 +569,7 @@ if (selected) {
                 <option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option>
               </select>
             </label>
-            <button type="button" className="article-audio-stop" onClick={()=>{window.speechSynthesis?.cancel();setSpeechStatus("idle");}} disabled={speechStatus==="idle"}><Square size={14}/> Stop</button>
+            <button type="button" className="article-audio-stop" onClick={()=>{speechRunIdRef.current+=1;speechQueueRef.current=[];window.speechSynthesis?.cancel();setSpeechStatus("idle");}} disabled={speechStatus==="idle"}><Square size={14}/> Stop</button>
           </div>
           {speechStatus === "unsupported" ? <p className="article-audio-note" role="status">Audio reading is not supported by this browser. Try an updated version of Chrome.</p> : speechStatus === "error" ? <p className="article-audio-note" role="status">The browser could not start audio. Check your phone's text-to-speech settings and try again.</p> : speechStatus === "empty" ? <p className="article-audio-note" role="status">This article has no readable text yet.</p> : <p className="article-audio-note" role="status">{speechStatus === "speaking" ? "Reading this article aloud…" : speechStatus === "loading" ? "Starting audio…" : speechStatus === "paused" ? "Audio paused." : "Uses voices available on your device or browser. Voice options may vary."}</p>}
         </section>
