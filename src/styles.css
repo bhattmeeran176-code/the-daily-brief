@@ -282,3 +282,5 @@ body.theme-dark .topic-card{background:#202b25;border-color:#435148;color:#e7ece
 body.theme-dark .topic-card strong{color:#b4a397}
 body.theme-dark .text-link{color:#e7ece7;border-color:#435148}
 @media(max-width:760px){.latest-nav-link{font-size:10px;padding:7px 8px}.topic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.topic-card{padding:13px;flex-wrap:wrap}.topic-card strong{margin-left:0}.discovery-section{margin-top:38px}}
+
+/* Batch 2 route styling finalized after production build check. */
