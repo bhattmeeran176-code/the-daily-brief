@@ -237,7 +237,16 @@ export default function Admin() {
     setMessage(nextValue ? "Article marked as Breaking News." : "Breaking News label removed.");
   }
 
-  async function unpublishArticle(id) {
+  async function unpublishArticle(id) {  async function toggleEditorPick(article) {
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
+    const nextValue = !article.is_editor_pick;
+    const { data, error } = await supabase.from("articles").update({ is_editor_pick: nextValue }).eq("id", article.id).select().single();
+    if (error) { setMessage("Editor's Pick update failed: " + error.message); return; }
+    setArticles(previous => previous.map(item => item.id === article.id ? data : item));
+    setMessage(nextValue ? "Article added to Editor's Picks." : "Article removed from Editor's Picks.");
+  }
+
+
     if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL) return;
     if (!window.confirm("Move this article back to Draft? It will no longer appear on the public website.")) return;
     const { data, error } = await supabase
@@ -567,7 +576,8 @@ export default function Admin() {
               onClick={() => toggleBreakingNews(article)}
               aria-pressed={Boolean(article.is_breaking)}
             >{article.is_breaking ? "Remove Breaking" : "Mark Breaking"}</button>
-            <button style={styles.button} onClick={() => editArticle(article)}>Edit</button>
+            <button style={styles.button} onClick={() => editArticle(article)}>Edit</button> 
+            <button style={{ ...styles.button, background: article.is_editor_pick ? "#315b4a" : "#53677a" }} onClick={() => toggleEditorPick(article)} aria-pressed={Boolean(article.is_editor_pick)}>{article.is_editor_pick ? "Remove Editor's Pick" : "Mark Editor's Pick"}</button>
             <button style={{ ...styles.button, background: "#c0392b" }} onClick={() => deleteArticle(article.id)}>Delete</button>
           </div>
         ))}
