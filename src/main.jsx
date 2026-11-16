@@ -594,15 +594,24 @@ if (selected) {
         <p className="article-kicker">{selected.category || selected.tag || "THE DAILY BRIEF"}</p>
         <h1>{selected.title}</h1>
         <div className="article-meta-row">
-          <span><Clock3 size={15} /> {readingMinutes} min read</span>
-          <span><Eye size={15} /> {Number(selected.views_count||0).toLocaleString()} views</span>
+          <div className="article-meta-stats">
+            <span><Clock3 size={15} /> {readingMinutes} min read</span>
+            <span><Eye size={15} /> {Number(selected.views_count||0).toLocaleString()} views</span>
+          </div>
           <button type="button" className="save-story-button" onClick={()=>toggleSaved(selected)}><Bookmark size={15} fill={isSaved?'currentColor':'none'}/>{isSaved?'Saved':'Save for later'}</button>
-          {selected.author && <button type="button" className="author-byline-link" onClick={()=>{const slug=slugify(selected.author);setSelected(null);setAuthorProfileSlug(slug);window.history.pushState({}, "", "/author/"+slug);window.scrollTo({top:0,behavior:"smooth"});}}>By {selected.author}</button>}
-          {(selected.published_at || selected.created_at) && <span>{new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(selected.published_at || selected.created_at))}</span>}
+        </div>
+        <div className="article-byline-row">
+          <div className="article-byline">
+            {selected.author && <><span className="article-byline-label">BY</span><button type="button" className="author-byline-link" onClick={()=>{const slug=slugify(selected.author);setSelected(null);setAuthorProfileSlug(slug);window.history.pushState({}, "", "/author/"+slug);window.scrollTo({top:0,behavior:"smooth"});}}>{selected.author}</button></>}
+            {(selected.published_at || selected.created_at) && <span className="article-publish-date">{new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(selected.published_at || selected.created_at))}</span>}
+          </div>
         </div>
 
         {(selected.image || selected.image_url) && (
-          <img className="article-hero" src={selected.image || selected.image_url} alt={selected.title} />
+          <figure className="article-figure">
+            <img className="article-hero" src={selected.image || selected.image_url} alt={selected.title} />
+            {(selected.image_caption || selected.image_credit) && <figcaption>{selected.image_caption || ""}{selected.image_caption && selected.image_credit ? " · " : ""}{selected.image_credit ? `Photo: ${selected.image_credit}` : ""}</figcaption>}
+          </figure>
         )}
 
         {selected.source_url && /^https?:\/\//i.test(selected.source_url) && (
