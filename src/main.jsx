@@ -211,7 +211,7 @@ function App(){
 const filtered = useMemo(
   () => allStories.filter(s =>
     (active === 'All' || s.category === active) &&
-    (`${s.title} ${s.excerpt}`).toLowerCase().includes(query.toLowerCase())
+    (`${s.title} ${s.excerpt} ${Array.isArray(s.tags)?s.tags.join(" "):s.tags||""}`).toLowerCase().includes(query.toLowerCase())
   ),
   [active, query, publishedArticles]
 );
