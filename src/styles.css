@@ -772,3 +772,97 @@ body.theme-dark .site>main>.discovery-section .topic-card{background:#202b25;bor
  .site>main>.discovery-section .topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
  .site>main>.discovery-section .topic-card{padding:14px 12px}
 }
+
+
+/* Mobile homepage layout repair — batch 7 */
+@media (max-width: 700px) {
+  /* Recently viewed: one full-width compact row per story */
+  .site>main>.reading-history-section .story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .site>main>.reading-history-section .story-card {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    column-gap: 14px;
+    min-width: 0;
+    padding: 0 0 16px;
+    margin: 0 0 16px;
+    border-bottom: 1px solid #dedfd9;
+  }
+  .site>main>.reading-history-section .story-card .story-image {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 112px;
+    height: 88px;
+    aspect-ratio: auto;
+    margin: 0;
+    border-radius: 3px;
+  }
+  .site>main>.reading-history-section .story-card h3 {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.28;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+  .site>main>.reading-history-section .story-card p {
+    display: none;
+  }
+
+  /* Latest stories: image above a naturally wrapping headline */
+  .site>main>#latest .story-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 13px;
+  }
+  .site>main>#latest .story-card {
+    display: block;
+    min-width: 0;
+    padding: 0 0 15px;
+    margin: 0;
+  }
+  .site>main>#latest .story-card .story-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    margin: 0 0 11px;
+  }
+  .site>main>#latest .story-card h3 {
+    display: block;
+    min-width: 0;
+    margin: 8px 0;
+    font-size: 17px;
+    line-height: 1.25;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+  .site>main>#latest .story-card p {
+    display: block;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+  .site>main>#latest .filters {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior-x: contain;
+  }
+  .site>main>#latest .filters::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .site>main>#latest .story-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site>main>#latest .story-card .story-image {
+    aspect-ratio: 16 / 9;
+  }
+}
