@@ -506,7 +506,7 @@ export default function Admin() {
     <main style={styles.page}>
       <header style={styles.card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <div><h1>The Daily Brief</h1><p>Admin Dashboard</p></div>
+          <div><h1 style={{ margin: "0 0 8px", fontSize: "clamp(26px, 4vw, 34px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.15, background: "linear-gradient(100deg, #b7791f 0%, #d69e36 38%, #8b5e1a 72%, #d6a84b 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>The Daily Brief</h1><p>Admin Dashboard</p></div>
           <button style={styles.button} onClick={logout}>Log out</button>
         </div>
         <h2>Welcome, Admin</h2>
